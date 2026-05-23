@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="theme-color" content="#0d0d0d">
+    <title>IronTrack</title>
+    <style>
+        :root {
+            --bg: #0d0d0d;
+            --surface: #1a1a1a;
+            --card: #222222;
+            --border: #2e2e2e;
+            --accent: #f0a500;
+            --accent-dim: rgba(240,165,0,0.12);
+            --strength: #ef4444;
+            --strength-dim: rgba(239,68,68,0.12);
+            --hypertrophy: #3b82f6;
+            --hypertrophy-dim: rgba(59,130,246,0.12);
+            --green: #22c55e;
+            --green-dim: rgba(34,197,94,0.15);
+            --text: #f0f0f0;
+            --text-muted: #888;
+            --text-dim: #444;
+            --nav-h: 64px;
+            --header-h: 56px;
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100dvh;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+        #app { display: flex; flex-direction: column; height: 100%; }
+
+        /* HEADER */
+        #header {
+            height: var(--header-h);
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 10px;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        #header-logo { font-size: 22px; line-height: 1; }
+        #header-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; flex: 1; }
+        .header-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .unit-toggle { background: var(--card); border: 1px solid var(--border); border-radius: 20px; display: flex; overflow: hidden; }
+        .unit-btn { flex: 1; padding: 5px 14px; border: none; background: none; color: var(--text-muted); font-size: 12px; font-weight: 700; cursor: pointer; }
+        .unit-btn.active { background: var(--accent); color: #000; }
+
+        /* SCREENS */
+        #screens { flex: 1; overflow: hidden; position: relative; }
+        .screen {
+            position: absolute; inset: 0;
+            overflow-y: auto; overflow-x: hidden;
+            padding: 16px 16px calc(var(--nav-h) + 20px);
+            display: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .screen.active { display: block; }
+
+        /* BOTTOM NAV */
+        #bottom-nav {
+            height: var(--nav-h);
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-shrink: 0;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .nav-btn {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 3px; cursor: pointer; border: none;
+            background: none; color: var(--text-dim);
+            font-size: 9px; font-weight: 600;
+            letter-spacing: 0.4px; text-transform: uppercase;
+            transition: color 0.15s; padding: 0;
+        }
+        .nav-btn.active { color: var(--accent); }
+        .nav-btn svg { width: 21px; height: 21px; }
+
+        /* CARDS */
+        .card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+        }
+        .card-sm {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px;
+        }
+
+        /* SECTION LABELS */
+        .section-label {
+            font-size: 10px; font-weight: 800; letter-spacing: 1.2px;
+            text-transform: uppercase; color: var(--text-muted);
+            margin-bottom: 10px; margin-top: 22px;
+        }
+        .section-label:first-child { margin-top: 0; }
+
+        /* BADGES */
+        .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-gold { background: var(--accent-dim); color: var(--accent); }
+        .badge-strength { background: var(--strength-dim); color: var(--strength); }
+        .badge-hypertrophy { background: var(--hypertrophy-dim); color: var(--hypertrophy); }
+        .badge-green { background: var(--green-dim); color: var(--green); }
+
+        /* BUTTONS */
+        .btn {
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; width: 100%; padding: 14px; border-radius: var(--radius);
+            border: none; font-size: 15px; font-weight: 700; cursor: pointer;
+            letter-spacing: -0.2px; font-family: inherit;
+        }
+        .btn-primary { background: var(--accent); color: #000; }
+        .btn-primary:active { opacity: 0.85; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-danger { background: var(--strength-dim); color: var(--strength); border: 1px solid rgba(239,68,68,0.3); }
+        .btn-sm { padding: 8px 16px; font-size: 13px; border-radius: var(--radius-sm); width: auto; }
+
+        /* INPUTS */
+        .input-group { margin-bottom: 14px; }
+        .input-label { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+        input[type=text], input[type=number], select {
+            width: 100%; background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); color: var(--text); font-size: 16px;
+            padding: 11px 14px; outline: none; font-family: inherit;
+        }
+        input:focus, select:focus { border-color: var(--accent); }
+        select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+        /* OVERLAYS / BOTTOM SHEETS */
+        .overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            z-index: 100; display: none; align-items: flex-end;
+            backdrop-filter: blur(2px);
+        }
+        .overlay.open { display: flex; }
+        .sheet {
+            background: var(--surface); border-radius: 20px 20px 0 0;
+            width: 100%; max-height: 88vh; overflow-y: auto;
+            padding: 0 16px 32px; border-top: 1px solid var(--border);
+        }
+        .sheet-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 14px auto 20px; }
+        .sheet-title { font-size: 17px; font-weight: 700; margin-bottom: 20px; text-align: center; }
+
+        /* STATS */
+        .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .stat-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 14px;
+        }
+        .stat-value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; line-height: 1; }
+        .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 4px; }
+
+        /* PR ROWS */
+        .pr-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 0; border-bottom: 1px solid var(--border);
+        }
+        .pr-row:last-child { border-bottom: none; }
+        .pr-name { font-size: 14px; font-weight: 600; }
+        .pr-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .pr-num { font-size: 16px; font-weight: 800; color: var(--accent); }
+
+        /* WORKOUT SCREEN */
+        .timer-bar {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 12px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .timer-label { font-size: 10px; color: var(--text-muted); font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; }
+        .timer-display { font-size: 22px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+
+        .exercise-block { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; }
+        .exercise-block-header { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+        .exercise-block-name { font-size: 15px; font-weight: 700; }
+        .exercise-block-sub { font-size: 11px; color: var(--accent); margin-top: 2px; }
+
+        .set-cols { display: grid; grid-template-columns: 28px 1fr 1fr 32px; gap: 8px; align-items: center; }
+        .set-header { padding: 6px 16px 4px; color: var(--text-dim); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
+        .set-header span { text-align: center; }
+        .set-row { padding: 8px 16px; border-bottom: 1px solid var(--border); }
+        .set-row:last-of-type { border-bottom: none; }
+        .set-num { font-size: 12px; font-weight: 700; color: var(--text-muted); text-align: center; }
+        .set-input {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text); font-size: 16px;
+            font-weight: 600; padding: 9px 6px; text-align: center;
+            outline: none; width: 100%; font-family: inherit;
+        }
+        .set-input:focus { border-color: var(--accent); }
+        .set-check {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: var(--surface); border: 2px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; flex-shrink: 0; transition: all 0.15s;
+        }
+        .set-check.done { background: var(--green); border-color: var(--green); }
+        .add-set-btn {
+            width: 100%; padding: 11px; background: none; border: none;
+            border-top: 1px solid var(--border); color: var(--accent);
+            font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 0.3px;
+            font-family: inherit;
+        }
+        .remove-btn { background: none; border: none; color: var(--text-dim); padding: 4px 8px; cursor: pointer; font-size: 18px; line-height: 1; }
+
+        /* REP CHART */
+        .rep-chart { display: grid; gap: 5px; }
+        .rep-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 12px; border-radius: var(--radius-sm);
+            background: var(--card); border: 1px solid var(--border);
+        }
+        .rep-row.zone-strength { border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.04); }
+        .rep-row.zone-hypertrophy { border-color: rgba(59,130,246,0.25); background: rgba(59,130,246,0.04); }
+        .rep-count { font-size: 13px; font-weight: 800; width: 26px; color: var(--text-muted); }
+        .rep-bar-wrap { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+        .rep-bar { height: 100%; border-radius: 3px; }
+        .rep-bar.strength { background: var(--strength); }
+        .rep-bar.hypertrophy { background: var(--hypertrophy); }
+        .rep-bar.endurance { background: var(--text-dim); }
+        .rep-weight { font-size: 15px; font-weight: 800; width: 70px; text-align: right; white-space: nowrap; }
+        .rep-pct { font-size: 11px; color: var(--text-muted); width: 32px; text-align: right; }
+
+        /* EXERCISE CARDS */
+        .exercise-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 13px 16px; margin-bottom: 8px;
+            display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; user-select: none;
+        }
+        .exercise-card:active { opacity: 0.75; }
+        .exercise-name { font-size: 15px; font-weight: 600; }
+        .exercise-pr { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+        .exercise-pr strong { color: var(--accent); font-weight: 700; }
+        .cat-header { font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-dim); padding: 14px 0 8px; }
+
+        /* HISTORY */
+        .history-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px;
+        }
+        .history-date { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-bottom: 5px; }
+        .history-exercises { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .history-stats { font-size: 12px; color: var(--text-muted); }
+
+        /* UTILS */
+        .flex-between { display: flex; align-items: center; justify-content: space-between; }
+        .flex-center { display: flex; align-items: center; justify-content: center; }
+        .gap-8 { gap: 8px; }
+        .mt-8 { margin-top: 8px; }
+        .mt-12 { margin-top: 12px; }
+        .empty-state { text-align: center; padding: 52px 24px; color: var(--text-muted); }
+        .empty-icon { font-size: 52px; margin-bottom: 14px; }
+        .empty-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+        .empty-sub { font-size: 14px; line-height: 1.6; }
+        ::-webkit-scrollbar { width: 0; }
+
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .anim { animation: fadeSlideUp 0.2s ease; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="header">
+        <span id="header-logo">🏋️</span>
+        <span id="header-title">IronTrack</span>
+        <div id="header-actions"></div>
+    </div>
+
+    <div id="screens">
+        <div id="screen-home" class="screen active"><div id="home-content"></div></div>
+        <div id="screen-workout" class="screen"><div id="workout-content"></div></div>
+        <div id="screen-calculator" class="screen"><div id="calc-content"></div></div>
+        <div id="screen-exercises" class="screen"><div id="exercises-content"></div></div>
+        <div id="screen-history" class="screen"><div id="history-content"></div></div>
+    </div>
+
+    <nav id="bottom-nav">
+        <button class="nav-btn active" data-screen="home">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            Home
+        </button>
+        <button class="nav-btn" data-screen="workout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="18"/>
+                <line x1="2" y1="9" x2="6" y2="9"/><line x1="18" y1="9" x2="22" y2="9"/>
+                <line x1="2" y1="15" x2="6" y2="15"/><line x1="18" y1="15" x2="22" y2="15"/>
+            </svg>
+            Workout
+        </button>
+        <button class="nav-btn" data-screen="calculator">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2"/>
+                <line x1="8" y1="6" x2="16" y2="6"/>
+                <line x1="8" y1="10" x2="16" y2="10"/>
+                <line x1="8" y1="14" x2="12" y2="14"/>
+                <line x1="8" y1="18" x2="10" y2="18"/>
+            </svg>
+            Calc
+        </button>
+        <button class="nav-btn" data-screen="exercises">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+            </svg>
+            Exercises
+        </button>
+        <button class="nav-btn" data-screen="history">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            History
+        </button>
+    </nav>
+</div>
+
+<!-- OVERLAY: Add Exercise to Workout -->
+<div id="overlay-add-exercise" class="overlay">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Add Exercise</div>
+        <input type="text" id="ex-search" placeholder="Search..." oninput="filterAddExercises(this.value)" style="margin-bottom:14px" autocomplete="off">
+        <div id="add-exercise-list"></div>
+    </div>
+</div>
+
+<!-- OVERLAY: Exercise Detail -->
+<div id="overlay-exercise-detail" class="overlay">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div id="exercise-detail-content"></div>
+    </div>
+</div>
+
+<!-- OVERLAY: End Workout -->
+<div id="overlay-end-workout" class="overlay">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Finish Workout?</div>
+        <div id="end-workout-summary"></div>
+        <div style="display:flex; gap:10px; margin-top:16px;">
+            <button class="btn btn-outline" style="flex:1" onclick="closeOverlay('overlay-end-workout')">Cancel</button>
+            <button class="btn btn-primary" style="flex:1" onclick="finishWorkout()">Save & Finish</button>
+        </div>
+    </div>
+</div>
+
+<!-- OVERLAY: Set / Edit 1RM -->
+<div id="overlay-set-1rm" class="overlay">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title" id="set-1rm-title">Set 1RM</div>
+        <div class="input-group">
+            <div class="input-label">Known 1RM (direct entry)</div>
+            <input type="number" id="input-1rm-direct" placeholder="e.g. 315" inputmode="decimal">
+        </div>
+        <div style="text-align:center; color:var(--text-muted); font-size:13px; margin-bottom:14px; position:relative;">
+            <span style="background:var(--surface); padding:0 12px; position:relative; z-index:1;">— or calculate from a set —</span>
+            <div style="position:absolute; top:50%; left:0; right:0; height:1px; background:var(--border); z-index:0;"></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:4px;">
+            <div class="input-group" style="margin:0">
+                <div class="input-label">Weight Lifted</div>
+                <input type="number" id="input-1rm-weight" placeholder="185" inputmode="decimal">
+            </div>
+            <div class="input-group" style="margin:0">
+                <div class="input-label">Reps Completed</div>
+                <input type="number" id="input-1rm-reps" placeholder="5" inputmode="numeric">
+            </div>
+        </div>
+        <div id="calc-1rm-preview" style="text-align:center; font-size:14px; color:var(--text-muted); min-height:28px; padding:8px 0 14px;"></div>
+        <button class="btn btn-primary" onclick="save1RM()">Save 1RM</button>
+    </div>
+</div>
+
+<!-- OVERLAY: New Custom Exercise -->
+<div id="overlay-new-exercise" class="overlay">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">New Exercise</div>
+        <div class="input-group">
+            <div class="input-label">Exercise Name</div>
+            <input type="text" id="new-exercise-name" placeholder="e.g. Romanian Deadlift" autocomplete="off">
+        </div>
+        <div class="input-group">
+            <div class="input-label">Category</div>
+            <select id="new-exercise-cat">
+                <option value="Legs">Legs</option>
+                <option value="Push">Push (Chest / Shoulders)</option>
+                <option value="Pull">Pull (Back / Biceps)</option>
+                <option value="Core">Core</option>
+                <option value="Cardio">Cardio</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" onclick="saveNewExercise()">Add Exercise</button>
+    </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// EXERCISE LIBRARY
+// ─────────────────────────────────────────────────────────────
+const DEFAULT_EXERCISES = [
+    { id:'squat',        name:'Back Squat',          cat:'Legs' },
+    { id:'front-squat',  name:'Front Squat',          cat:'Legs' },
+    { id:'deadlift',     name:'Deadlift',             cat:'Legs' },
+    { id:'rdl',          name:'Romanian Deadlift',    cat:'Legs' },
+    { id:'leg-press',    name:'Leg Press',            cat:'Legs' },
+    { id:'lunge',        name:'Walking Lunge',        cat:'Legs' },
+    { id:'hack-squat',   name:'Hack Squat',           cat:'Legs' },
+    { id:'leg-curl',     name:'Leg Curl',             cat:'Legs' },
+    { id:'leg-ext',      name:'Leg Extension',        cat:'Legs' },
+    { id:'calf-raise',   name:'Standing Calf Raise',  cat:'Legs' },
+    { id:'bench',        name:'Bench Press',          cat:'Push' },
+    { id:'incline',      name:'Incline Bench Press',  cat:'Push' },
+    { id:'db-bench',     name:'DB Bench Press',       cat:'Push' },
+    { id:'ohp',          name:'Overhead Press',       cat:'Push' },
+    { id:'db-shoulder',  name:'DB Shoulder Press',    cat:'Push' },
+    { id:'lat-raise',    name:'Lateral Raise',        cat:'Push' },
+    { id:'tricep-ext',   name:'Tricep Extension',     cat:'Push' },
+    { id:'skull-crusher',name:'Skull Crusher',        cat:'Push' },
+    { id:'chest-fly',    name:'Cable Chest Fly',      cat:'Push' },
+    { id:'dip',          name:'Dip',                  cat:'Push' },
+    { id:'barbell-row',  name:'Barbell Row',          cat:'Pull' },
+    { id:'pullup',       name:'Pull-Up',              cat:'Pull' },
+    { id:'chinup',       name:'Chin-Up',              cat:'Pull' },
+    { id:'lat-pulldown', name:'Lat Pulldown',         cat:'Pull' },
+    { id:'seated-row',   name:'Seated Cable Row',     cat:'Pull' },
+    { id:'face-pull',    name:'Face Pull',            cat:'Pull' },
+    { id:'barbell-curl', name:'Barbell Curl',         cat:'Pull' },
+    { id:'hammer-curl',  name:'Hammer Curl',          cat:'Pull' },
+    { id:'db-row',       name:'Single-Arm DB Row',    cat:'Pull' },
+    { id:'plank',        name:'Plank',                cat:'Core' },
+    { id:'ab-rollout',   name:'Ab Rollout',           cat:'Core' },
+    { id:'hanging-leg',  name:'Hanging Leg Raise',    cat:'Core' },
+    { id:'cable-crunch', name:'Cable Crunch',         cat:'Core' },
+    { id:'russian-twist',name:'Russian Twist',        cat:'Core' },
+];
+
+// Prilepin-based percentage chart
+const REP_PCT = {
+    1:1.00, 2:0.97, 3:0.94, 4:0.92, 5:0.89,
+    6:0.86, 7:0.83, 8:0.81, 9:0.78, 10:0.75,
+    11:0.73, 12:0.71, 15:0.65, 20:0.60
+};
+function getRepPct(r) {
+    if (REP_PCT[r]) return REP_PCT[r];
+    return Math.max(0.50, 1 - r * 0.028);
+}
+
+// ─────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────
+let S = {
+    exercises: [...DEFAULT_EXERCISES],
+    workouts: [],
+    prs: {},            // { exId: { weight, reps, est1RM, date } }
+    activeWorkout: null,// { id, startTime, entries:[{ exerciseId, sets:[{weight,reps,done}] }] }
+    unit: 'lbs',
+    screen: 'home',
+    calcExId: null,
+    set1rmExId: null,
+    _timer: null,
+};
+
+// ─────────────────────────────────────────────────────────────
+// PERSISTENCE
+// ─────────────────────────────────────────────────────────────
+function save() {
+    localStorage.setItem('irontrack_v1', JSON.stringify({
+        exercises: S.exercises, workouts: S.workouts,
+        prs: S.prs, activeWorkout: S.activeWorkout, unit: S.unit
+    }));
+}
+
+function loadData() {
+    try {
+        const d = JSON.parse(localStorage.getItem('irontrack_v1') || 'null');
+        if (!d) return;
+        S.exercises     = d.exercises     || [...DEFAULT_EXERCISES];
+        S.workouts      = d.workouts      || [];
+        S.prs           = d.prs           || {};
+        S.activeWorkout = d.activeWorkout || null;
+        S.unit          = d.unit          || 'lbs';
+    } catch(e) {}
+}
+
+// ─────────────────────────────────────────────────────────────
+// MATH
+// ─────────────────────────────────────────────────────────────
+function epley(w, r)        { return r === 1 ? w : Math.round(w * (1 + r / 30)); }
+function wForReps(orm, r)   { return Math.round((orm * getRepPct(r)) / 2.5) * 2.5; }
+function repChart(orm) {
+    return [1,2,3,4,5,6,7,8,9,10,11,12,15,20].map(r => ({
+        reps: r, pct: getRepPct(r), weight: wForReps(orm, r),
+        zone: r <= 5 ? 'strength' : r <= 12 ? 'hypertrophy' : 'endurance'
+    }));
+}
+
+// ─────────────────────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────────────────────
+function navigate(screen) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('screen-' + screen).classList.add('active');
+    document.querySelector(`[data-screen="${screen}"]`).classList.add('active');
+    S.screen = screen;
+    renderScreen(screen);
+    renderHeader(screen);
+}
+
+function renderHeader(screen) {
+    const titles = { home:'IronTrack', workout: S.activeWorkout ? 'Active Workout' : 'Workout', calculator:'1RM Calculator', exercises:'Exercises', history:'History' };
+    document.getElementById('header-title').textContent = titles[screen] || screen;
+    const ha = document.getElementById('header-actions');
+    if (screen === 'exercises') {
+        ha.innerHTML = `<button class="header-btn" onclick="openOverlay('overlay-new-exercise')">+ New</button>`;
+    } else if (screen === 'workout' && S.activeWorkout) {
+        ha.innerHTML = `<button class="header-btn" onclick="promptEndWorkout()">Finish</button>`;
+    } else {
+        ha.innerHTML = `<div class="unit-toggle">
+            <button class="unit-btn ${S.unit==='lbs'?'active':''}" onclick="setUnit('lbs')">lbs</button>
+            <button class="unit-btn ${S.unit==='kg'?'active':''}" onclick="setUnit('kg')">kg</button>
+        </div>`;
+    }
+}
+
+function renderScreen(s) {
+    if (s === 'home')       renderHome();
+    if (s === 'workout')    renderWorkout();
+    if (s === 'calculator') renderCalculator();
+    if (s === 'exercises')  renderExercises();
+    if (s === 'history')    renderHistory();
+}
+
+function setUnit(u) {
+    S.unit = u; save();
+    renderHeader(S.screen); renderScreen(S.screen);
+}
+
+// ─────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────
+function getEx(id)         { return S.exercises.find(e => e.id === id); }
+function elapsedMs()       { return S.activeWorkout ? Date.now() - S.activeWorkout.startTime : 0; }
+function fmtMs(ms) {
+    const s = Math.floor(ms/1000), m = Math.floor(s/60), h = Math.floor(m/60);
+    return h > 0 ? `${h}:${pad(m%60)}:${pad(s%60)}` : `${m}:${pad(s%60)}`;
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+function fmtDate(d) {
+    const now = new Date(), diff = now - d;
+    if (diff < 86400000 && now.getDate() === d.getDate()) return 'Today';
+    if (diff < 172800000) return 'Yesterday';
+    return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+
+function openOverlay(id) {
+    const el = document.getElementById(id);
+    el.classList.add('open');
+    const handler = e => { if (e.target === el) { el.classList.remove('open'); el.removeEventListener('click', handler); }};
+    el.addEventListener('click', handler);
+}
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+
+function startTimer() {
+    clearInterval(S._timer);
+    S._timer = setInterval(() => {
+        ['home-timer','workout-timer'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = fmtMs(elapsedMs());
+        });
+    }, 1000);
+}
+
+// ─────────────────────────────────────────────────────────────
+// HOME SCREEN
+// ─────────────────────────────────────────────────────────────
+function renderHome() {
+    const totalW = S.workouts.length;
+    const weekW  = S.workouts.filter(w => Date.now() - w.startTime < 7*86400000).length;
+    const topPRs = Object.entries(S.prs)
+        .filter(([,v]) => v.est1RM)
+        .sort((a,b) => b[1].est1RM - a[1].est1RM)
+        .slice(0, 5);
+    const lastW  = S.workouts[S.workouts.length - 1];
+
+    let h = `
+        <div class="stat-row">
+            <div class="stat-card"><div class="stat-value">${totalW}</div><div class="stat-label">Total Workouts</div></div>
+            <div class="stat-card"><div class="stat-value">${weekW}</div><div class="stat-label">This Week</div></div>
+        </div>
+    `;
+
+    if (S.activeWorkout) {
+        h += `<div class="card anim" style="border-color:var(--accent);">
+            <div class="flex-between" style="margin-bottom:12px;">
+                <div>
+                    <div style="font-size:10px;font-weight:800;letter-spacing:1px;color:var(--accent);margin-bottom:4px;">● ACTIVE WORKOUT</div>
+                    <div style="font-size:15px;font-weight:700;">${S.activeWorkout.entries.length} exercise${S.activeWorkout.entries.length!==1?'s':''} logged</div>
+                </div>
+                <div id="home-timer" style="font-size:24px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums;">${fmtMs(elapsedMs())}</div>
+            </div>
+            <button class="btn btn-primary" onclick="navigate('workout')">Continue Workout →</button>
+        </div>`;
+        startTimer();
+    } else {
+        h += `<button class="btn btn-primary anim" onclick="startWorkout()">+ Start New Workout</button>`;
+    }
+
+    if (topPRs.length) {
+        h += `<div class="section-label">Personal Records (Est. 1RM)</div>
+        <div class="card" style="padding:4px 16px;">`;
+        topPRs.forEach(([id, pr]) => {
+            const ex = getEx(id);
+            h += `<div class="pr-row">
+                <div>
+                    <div class="pr-name">${ex ? ex.name : id}</div>
+                    <div class="pr-sub">Best set: ${pr.weight} ${S.unit} × ${pr.reps}</div>
+                </div>
+                <div class="pr-num">${Math.round(pr.est1RM)} ${S.unit}</div>
+            </div>`;
+        });
+        h += `</div>`;
+    }
+
+    if (lastW && !S.activeWorkout) {
+        const exNames = lastW.entries.map(e => getEx(e.exerciseId)?.name || e.exerciseId);
+        h += `<div class="section-label">Last Workout</div>
+        <div class="card flex-between">
+            <div>
+                <div style="font-size:14px;font-weight:700;">${fmtDate(new Date(lastW.startTime))}</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">${exNames.slice(0,3).join(', ')}${exNames.length>3?' +'+exNames.length-3+' more':''}</div>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);">${fmtMs(lastW.duration||0)}</div>
+        </div>`;
+    }
+
+    if (!totalW && !S.activeWorkout) {
+        h += `<div class="empty-state">
+            <div class="empty-icon">🏋️</div>
+            <div class="empty-title">Ready to lift?</div>
+            <div class="empty-sub">Tap "Start New Workout" to log your first session and start building your personal records.</div>
+        </div>`;
+    }
+
+    document.getElementById('home-content').innerHTML = h;
+}
+
+// ─────────────────────────────────────────────────────────────
+// WORKOUT SCREEN
+// ─────────────────────────────────────────────────────────────
+function startWorkout() {
+    if (S.activeWorkout) { navigate('workout'); return; }
+    S.activeWorkout = { id: Date.now(), startTime: Date.now(), entries: [] };
+    save(); navigate('workout');
+}
+
+function renderWorkout() {
+    const el = document.getElementById('workout-content');
+
+    if (!S.activeWorkout) {
+        el.innerHTML = `<div class="empty-state">
+            <div class="empty-icon">💪</div>
+            <div class="empty-title">No Active Workout</div>
+            <div class="empty-sub">Start a new workout to begin logging your sets and tracking progress.</div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:8px;" onclick="startWorkout()">+ Start Workout</button>`;
+        return;
+    }
+
+    const sets_done = S.activeWorkout.entries.reduce((a,e) => a + e.sets.filter(s=>s.done).length, 0);
+    let h = `<div class="timer-bar">
+        <div>
+            <div class="timer-label">Elapsed</div>
+            <div class="timer-display" id="workout-timer">${fmtMs(elapsedMs())}</div>
+        </div>
+        <div style="text-align:right;">
+            <div class="timer-label">Sets Done</div>
+            <div style="font-size:22px;font-weight:800;">${sets_done}</div>
+        </div>
+    </div>`;
+
+    S.activeWorkout.entries.forEach((entry, ei) => {
+        const ex  = getEx(entry.exerciseId);
+        const pr  = S.prs[entry.exerciseId];
+        const prTxt = pr ? `PR: ${Math.round(pr.est1RM)} ${S.unit} est. 1RM` : 'No PR yet — get after it';
+
+        h += `<div class="exercise-block anim">
+            <div class="exercise-block-header">
+                <div>
+                    <div class="exercise-block-name">${ex ? ex.name : entry.exerciseId}</div>
+                    <div class="exercise-block-sub">${prTxt}</div>
+                </div>
+                <button class="remove-btn" onclick="removeEntry(${ei})">✕</button>
+            </div>
+            <div class="set-cols set-header"><span></span><span>Weight (${S.unit})</span><span>Reps</span><span></span></div>`;
+
+        entry.sets.forEach((set, si) => {
+            h += `<div class="set-row set-cols">
+                <div class="set-num">${si+1}</div>
+                <input class="set-input" type="number" inputmode="decimal" placeholder="—" value="${set.weight||''}" step="2.5"
+                    onchange="updateSet(${ei},${si},'weight',this.value)" onfocus="this.select()">
+                <input class="set-input" type="number" inputmode="numeric" placeholder="—" value="${set.reps||''}"
+                    onchange="updateSet(${ei},${si},'reps',this.value)" onfocus="this.select()">
+                <div class="set-check ${set.done?'done':''}" onclick="toggleDone(${ei},${si})">
+                    ${set.done ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+                </div>
+            </div>`;
+        });
+
+        h += `<button class="add-set-btn" onclick="addSet(${ei})">+ Add Set</button></div>`;
+    });
+
+    h += `<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+        <button class="btn btn-outline" onclick="openAddExercise()">+ Add Exercise</button>
+        ${S.activeWorkout.entries.length ? `<button class="btn btn-primary" onclick="promptEndWorkout()">Finish Workout</button>` : ''}
+    </div>`;
+
+    el.innerHTML = h;
+    startTimer();
+    renderHeader('workout');
+}
+
+function updateSet(ei, si, field, val) {
+    if (!S.activeWorkout) return;
+    const n = parseFloat(val);
+    S.activeWorkout.entries[ei].sets[si][field] = isNaN(n) ? '' : n;
+    // Auto-update PR
+    const entry = S.activeWorkout.entries[ei];
+    const set   = entry.sets[si];
+    if (set.weight && set.reps) {
+        const est = epley(set.weight, set.reps);
+        const cur = S.prs[entry.exerciseId];
+        if (!cur || est > cur.est1RM) {
+            S.prs[entry.exerciseId] = { weight: set.weight, reps: set.reps, est1RM: est, date: Date.now() };
+        }
+    }
+    save();
+}
+
+function toggleDone(ei, si) {
+    S.activeWorkout.entries[ei].sets[si].done ^= true;
+    save(); renderWorkout();
+}
+
+function addSet(ei) {
+    const sets = S.activeWorkout.entries[ei].sets;
+    const last  = sets[sets.length - 1] || {};
+    sets.push({ weight: last.weight || '', reps: last.reps || '', done: false });
+    save(); renderWorkout();
+}
+
+function removeEntry(ei) {
+    S.activeWorkout.entries.splice(ei, 1);
+    save(); renderWorkout();
+}
+
+function openAddExercise() {
+    const cats = [...new Set(S.exercises.map(e => e.cat))];
+    let h = '';
+    cats.forEach(cat => {
+        const exs = S.exercises.filter(e => e.cat === cat);
+        h += `<div class="cat-header" data-ahcat="${cat}">${cat}</div>`;
+        exs.forEach(ex => {
+            const pr = S.prs[ex.id];
+            h += `<div class="exercise-card" data-ahcard="${ex.id}" onclick="addExToWorkout('${ex.id}')">
+                <div>
+                    <div class="exercise-name">${ex.name}</div>
+                    <div class="exercise-pr">${pr ? `Best: <strong>${Math.round(pr.est1RM)} ${S.unit}</strong> est. 1RM` : 'No data yet'}</div>
+                </div>
+                <span style="color:var(--accent);font-size:20px;font-weight:700;">+</span>
+            </div>`;
+        });
+    });
+    document.getElementById('add-exercise-list').innerHTML = h;
+    document.getElementById('ex-search').value = '';
+    openOverlay('overlay-add-exercise');
+}
+
+function filterAddExercises(q) {
+    q = q.toLowerCase();
+    document.querySelectorAll('[data-ahcard]').forEach(c => {
+        c.style.display = c.querySelector('.exercise-name').textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
+function addExToWorkout(exId) {
+    if (!S.activeWorkout) return;
+    // Pre-fill from last session
+    const lastW = [...S.workouts].reverse().find(w => w.entries.some(e => e.exerciseId === exId));
+    let sets = [{ weight:'', reps:'', done:false }];
+    if (lastW) {
+        const lastEntry = lastW.entries.find(e => e.exerciseId === exId);
+        if (lastEntry?.sets?.length) sets = lastEntry.sets.map(s => ({ weight:s.weight, reps:s.reps, done:false }));
+    }
+    S.activeWorkout.entries.push({ exerciseId: exId, sets });
+    save();
+    closeOverlay('overlay-add-exercise');
+    renderWorkout();
+}
+
+function promptEndWorkout() {
+    const entries = S.activeWorkout.entries;
+    const sets  = entries.reduce((a,e) => a + e.sets.filter(s => s.weight&&s.reps).length, 0);
+    const vol   = entries.reduce((a,e) => a + e.sets.reduce((b,s) => b + (parseFloat(s.weight)||0)*(parseInt(s.reps)||0), 0), 0);
+    document.getElementById('end-workout-summary').innerHTML = `
+        <div class="stat-row" style="margin-bottom:10px;">
+            <div class="stat-card"><div class="stat-value">${fmtMs(elapsedMs())}</div><div class="stat-label">Duration</div></div>
+            <div class="stat-card"><div class="stat-value">${sets}</div><div class="stat-label">Sets Logged</div></div>
+        </div>
+        <div class="stat-card"><div class="stat-value">${Math.round(vol).toLocaleString()} ${S.unit}</div><div class="stat-label">Total Volume</div></div>
+    `;
+    openOverlay('overlay-end-workout');
+}
+
+function finishWorkout() {
+    const w = { ...S.activeWorkout, endTime: Date.now(), duration: Date.now() - S.activeWorkout.startTime };
+    S.workouts.push(w);
+    S.activeWorkout = null;
+    clearInterval(S._timer);
+    save();
+    closeOverlay('overlay-end-workout');
+    navigate('home');
+}
+
+// ─────────────────────────────────────────────────────────────
+// CALCULATOR SCREEN
+// ─────────────────────────────────────────────────────────────
+function renderCalculator() {
+    const pr  = S.calcExId ? S.prs[S.calcExId] : null;
+    const orm = pr ? Math.round(pr.est1RM) : null;
+
+    const exOpts = S.exercises.map(e => {
+        const p = S.prs[e.id];
+        return `<option value="${e.id}" ${S.calcExId===e.id?'selected':''}>${e.name}${p?' ('+Math.round(p.est1RM)+' '+S.unit+')':''}</option>`;
+    }).join('');
+
+    let h = `
+        <div class="section-label">Exercise</div>
+        <select onchange="setCalcEx(this.value)" style="margin-bottom:16px;">
+            <option value="">— Select Exercise —</option>
+            ${exOpts}
+        </select>
+
+        <div class="section-label">Your 1RM</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:18px;">
+            <input type="number" id="calc-orm-input" inputmode="decimal" placeholder="e.g. 225" value="${orm||''}" oninput="liveRepChart(this.value)">
+            <span style="color:var(--text-muted);font-size:14px;">${S.unit}</span>
+        </div>
+
+        <div class="flex-between" style="margin-bottom:10px;align-items:flex-end;">
+            <div class="section-label" style="margin:0;">Rep Chart</div>
+            <div style="display:flex;gap:6px;font-size:11px;font-weight:700;">
+                <span style="background:var(--strength-dim);color:var(--strength);padding:2px 8px;border-radius:10px;">STRENGTH 1–5</span>
+                <span style="background:var(--hypertrophy-dim);color:var(--hypertrophy);padding:2px 8px;border-radius:10px;">HYPERTROPHY 6–12</span>
+            </div>
+        </div>
+        <div class="rep-chart" id="rep-chart-area">${orm ? buildRepChart(orm) : `<div style="text-align:center;padding:28px;color:var(--text-muted);font-size:14px;">Enter your 1RM above to see recommended weights for every rep range.</div>`}</div>
+
+        <div class="section-label">Estimate 1RM from a Set</div>
+        <div class="card">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                <div class="input-group" style="margin:0;">
+                    <div class="input-label">Weight Lifted</div>
+                    <input type="number" id="est-w" inputmode="decimal" placeholder="185" oninput="liveEst()">
+                </div>
+                <div class="input-group" style="margin:0;">
+                    <div class="input-label">Reps Completed</div>
+                    <input type="number" id="est-r" inputmode="numeric" placeholder="5" oninput="liveEst()">
+                </div>
+            </div>
+            <div id="est-result" style="min-height:50px;text-align:center;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:14px;">Enter weight and reps above</div>
+        </div>
+    `;
+
+    document.getElementById('calc-content').innerHTML = h;
+}
+
+function buildRepChart(orm) {
+    return repChart(orm).map(row => {
+        const barPct = Math.round(row.pct * 100);
+        const zr = row.zone === 'strength' ? 'zone-strength' : row.zone === 'hypertrophy' ? 'zone-hypertrophy' : '';
+        return `<div class="rep-row ${zr}">
+            <div class="rep-count">${row.reps}×</div>
+            <div class="rep-bar-wrap"><div class="rep-bar ${row.zone}" style="width:${barPct}%"></div></div>
+            <div class="rep-weight">${row.weight} <span style="font-size:11px;color:var(--text-muted)">${S.unit}</span></div>
+            <div class="rep-pct">${barPct}%</div>
+        </div>`;
+    }).join('');
+}
+
+function liveRepChart(val) {
+    const orm = parseFloat(val);
+    const el  = document.getElementById('rep-chart-area');
+    if (!el) return;
+    el.innerHTML = orm > 0
+        ? buildRepChart(orm)
+        : `<div style="text-align:center;padding:28px;color:var(--text-muted);font-size:14px;">Enter your 1RM above to see recommended weights for every rep range.</div>`;
+}
+
+function setCalcEx(id) {
+    S.calcExId = id; renderCalculator();
+}
+
+function liveEst() {
+    const w = parseFloat(document.getElementById('est-w').value);
+    const r = parseInt(document.getElementById('est-r').value);
+    const el = document.getElementById('est-result');
+    if (!el) return;
+    if (!w || !r || w <= 0 || r <= 0) {
+        el.innerHTML = `<span style="color:var(--text-muted)">Enter weight and reps above</span>`;
+        return;
+    }
+    const est = epley(w, r);
+    const c5  = repChart(est).find(c => c.reps === 5);
+    const c8  = repChart(est).find(c => c.reps === 8);
+    el.innerHTML = `
+        <div>
+            <div style="font-size:26px;font-weight:800;color:var(--accent);margin-bottom:6px;">~${est} ${S.unit} <span style="font-size:13px;color:var(--text-muted);font-weight:500">est. 1RM</span></div>
+            <div style="font-size:13px;color:var(--text-muted);display:flex;justify-content:center;gap:20px;flex-wrap:wrap;">
+                ${c5 ? `<span>5 reps → <strong style="color:var(--text)">${c5.weight} ${S.unit}</strong></span>` : ''}
+                ${c8 ? `<span>8 reps → <strong style="color:var(--text)">${c8.weight} ${S.unit}</strong></span>` : ''}
+            </div>
+        </div>`;
+    // Populate the main chart too
+    liveRepChart(est);
+    const inp = document.getElementById('calc-orm-input');
+    if (inp) inp.value = est;
+}
+
+// ─────────────────────────────────────────────────────────────
+// EXERCISES SCREEN
+// ─────────────────────────────────────────────────────────────
+function renderExercises() {
+    const cats = [...new Set(S.exercises.map(e => e.cat))];
+    let h = `<input type="text" id="ex-filter" placeholder="Search exercises..." oninput="filterExercises(this.value)" style="margin-bottom:16px;" autocomplete="off">`;
+    cats.forEach(cat => {
+        const exs = S.exercises.filter(e => e.cat === cat);
+        h += `<div class="cat-header" data-ecat="${cat}">${cat}</div>`;
+        exs.forEach(ex => {
+            const pr = S.prs[ex.id];
+            const orm = pr ? Math.round(pr.est1RM) : null;
+            h += `<div class="exercise-card" data-ecard="${ex.id}" onclick="openExDetail('${ex.id}')">
+                <div>
+                    <div class="exercise-name">${ex.name}</div>
+                    <div class="exercise-pr">${pr ? `Best: ${pr.weight}×${pr.reps} · <strong>${orm} ${S.unit}</strong> est. 1RM` : 'No data yet'}</div>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            </div>`;
+        });
+    });
+    document.getElementById('exercises-content').innerHTML = h;
+}
+
+function filterExercises(q) {
+    q = q.toLowerCase();
+    document.querySelectorAll('[data-ecard]').forEach(c => {
+        c.style.display = c.querySelector('.exercise-name').textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
+function openExDetail(exId) {
+    const ex      = getEx(exId);
+    const pr      = S.prs[exId];
+    const orm     = pr ? Math.round(pr.est1RM) : null;
+    const history = [...S.workouts].reverse().filter(w => w.entries.some(e => e.exerciseId === exId)).slice(0, 8);
+
+    let h = `
+        <div class="sheet-title">${ex ? ex.name : exId}</div>
+        <div class="flex-between" style="margin-bottom:14px;">
+            <span class="badge badge-gold">${ex?.cat || ''}</span>
+            <button class="header-btn" onclick="openSet1RM('${exId}')">Edit 1RM</button>
+        </div>`;
+
+    if (orm) {
+        h += `<div class="stat-row" style="margin-bottom:14px;">
+            <div class="stat-card">
+                <div class="stat-value">${orm} <span style="font-size:14px;color:var(--text-muted)">${S.unit}</span></div>
+                <div class="stat-label">Estimated 1RM</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${pr.weight}×${pr.reps}</div>
+                <div class="stat-label">Best Set</div>
+            </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;font-size:11px;font-weight:700;">
+            <span style="background:var(--strength-dim);color:var(--strength);padding:2px 8px;border-radius:10px;">STRENGTH 1–5</span>
+            <span style="background:var(--hypertrophy-dim);color:var(--hypertrophy);padding:2px 8px;border-radius:10px;">HYPERTROPHY 6–12</span>
+        </div>
+        <div class="rep-chart">${buildRepChart(orm)}</div>`;
+    } else {
+        h += `<div class="card" style="text-align:center;color:var(--text-muted);padding:24px;">
+            No 1RM data yet.<br>Log some sets or tap "Edit 1RM" to enter your data.
+        </div>`;
+    }
+
+    if (history.length) {
+        h += `<div class="section-label">Recent Sessions</div>`;
+        history.forEach(w => {
+            const entry = w.entries.find(e => e.exerciseId === exId);
+            const validSets = entry.sets.filter(s => s.weight && s.reps);
+            const topSet = validSets.reduce((best, s) => {
+                const e1 = epley(s.weight, s.reps);
+                return e1 > (best ? epley(best.weight, best.reps) : 0) ? s : best;
+            }, null);
+            h += `<div class="card-sm flex-between">
+                <div>
+                    <div style="font-size:13px;font-weight:700;">${fmtDate(new Date(w.startTime))}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">${validSets.length} sets · ${validSets.map(s=>s.weight+'×'+s.reps).join(', ')}</div>
+                </div>
+                ${topSet ? `<div style="font-size:14px;font-weight:800;color:var(--accent);">${topSet.weight}×${topSet.reps}</div>` : ''}
+            </div>`;
+        });
+    }
+
+    h += `<div style="display:flex;gap:10px;margin-top:14px;">
+        <button class="btn btn-outline" style="flex:1;" onclick="closeOverlay('overlay-exercise-detail')">Close</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="quickLog('${exId}')">Log This</button>
+    </div><div style="height:4px;"></div>`;
+
+    document.getElementById('exercise-detail-content').innerHTML = h;
+    openOverlay('overlay-exercise-detail');
+}
+
+function quickLog(exId) {
+    closeOverlay('overlay-exercise-detail');
+    if (!S.activeWorkout) {
+        S.activeWorkout = { id: Date.now(), startTime: Date.now(), entries: [] };
+        save();
+    }
+    setTimeout(() => { addExToWorkout(exId); navigate('workout'); }, 50);
+}
+
+// ─────────────────────────────────────────────────────────────
+// HISTORY SCREEN
+// ─────────────────────────────────────────────────────────────
+function renderHistory() {
+    const el = document.getElementById('history-content');
+    if (!S.workouts.length) {
+        el.innerHTML = `<div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">No workouts yet</div>
+            <div class="empty-sub">Your completed workouts will appear here once you finish your first session.</div>
+        </div>`;
+        return;
+    }
+    let h = '';
+    [...S.workouts].reverse().forEach(w => {
+        const exNames = w.entries.map(e => getEx(e.exerciseId)?.name || e.exerciseId);
+        const sets = w.entries.reduce((a,e) => a + e.sets.filter(s=>s.weight&&s.reps).length, 0);
+        const vol  = w.entries.reduce((a,e) => a + e.sets.reduce((b,s) => b+(parseFloat(s.weight)||0)*(parseInt(s.reps)||0), 0), 0);
+        h += `<div class="history-card">
+            <div class="history-date">${fmtDate(new Date(w.startTime))} · ${fmtMs(w.duration||0)}</div>
+            <div class="history-exercises">${exNames.slice(0,3).join(', ')}${exNames.length>3?' +' + (exNames.length-3) + ' more':''}</div>
+            <div class="history-stats">${sets} sets · ${Math.round(vol).toLocaleString()} ${S.unit} total volume</div>
+        </div>`;
+    });
+    el.innerHTML = h;
+}
+
+// ─────────────────────────────────────────────────────────────
+// 1RM MODAL
+// ─────────────────────────────────────────────────────────────
+function openSet1RM(exId) {
+    S.set1rmExId = exId;
+    const ex = getEx(exId);
+    const pr = S.prs[exId];
+    document.getElementById('set-1rm-title').textContent = `Set 1RM${ex ? ' — ' + ex.name : ''}`;
+    document.getElementById('input-1rm-direct').value = pr ? Math.round(pr.est1RM) : '';
+    document.getElementById('input-1rm-weight').value = '';
+    document.getElementById('input-1rm-reps').value   = '';
+    document.getElementById('calc-1rm-preview').innerHTML = '';
+
+    const preview = () => {
+        const w = parseFloat(document.getElementById('input-1rm-weight').value);
+        const r = parseInt(document.getElementById('input-1rm-reps').value);
+        if (w && r && w > 0 && r > 0) {
+            const est = epley(w, r);
+            document.getElementById('calc-1rm-preview').innerHTML =
+                `Estimated 1RM: <strong style="color:var(--accent);">${est} ${S.unit}</strong>`;
+        } else {
+            document.getElementById('calc-1rm-preview').innerHTML = '';
+        }
+    };
+    setTimeout(() => {
+        document.getElementById('input-1rm-weight').addEventListener('input', preview);
+        document.getElementById('input-1rm-reps').addEventListener('input', preview);
+    }, 50);
+
+    closeOverlay('overlay-exercise-detail');
+    openOverlay('overlay-set-1rm');
+}
+
+function save1RM() {
+    const exId = S.set1rmExId; if (!exId) return;
+    const direct = parseFloat(document.getElementById('input-1rm-direct').value);
+    const w      = parseFloat(document.getElementById('input-1rm-weight').value);
+    const r      = parseInt(document.getElementById('input-1rm-reps').value);
+    let est1RM, weight, reps;
+    if (direct > 0) { est1RM = direct; weight = direct; reps = 1; }
+    else if (w > 0 && r > 0) { est1RM = epley(w, r); weight = w; reps = r; }
+    else return;
+    S.prs[exId] = { weight, reps, est1RM, date: Date.now() };
+    save(); closeOverlay('overlay-set-1rm');
+    renderScreen(S.screen);
+}
+
+// ─────────────────────────────────────────────────────────────
+// NEW EXERCISE MODAL
+// ─────────────────────────────────────────────────────────────
+function saveNewExercise() {
+    const name = document.getElementById('new-exercise-name').value.trim();
+    const cat  = document.getElementById('new-exercise-cat').value;
+    if (!name) return;
+    const id = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'') + '-' + Date.now();
+    S.exercises.push({ id, name, cat });
+    save(); closeOverlay('overlay-new-exercise');
+    document.getElementById('new-exercise-name').value = '';
+    renderExercises();
+}
+
+// ─────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => navigate(btn.dataset.screen));
+});
+
+loadData();
+renderHeader('home');
+renderHome();
+
+// Resume timer if workout was in progress
+if (S.activeWorkout) startTimer();
+
+// PWA: Service Worker (works when served over HTTP/HTTPS)
+if ('serviceWorker' in navigator) {
+    const sw = `const C='irontrack-v1';self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(['./']))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));`;
+    try {
+        const blob = new Blob([sw], { type:'application/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+    } catch(e) {}
+}
+// PWA: Manifest
+try {
+    const m = { name:'IronTrack', short_name:'IronTrack', start_url:'./', display:'standalone', background_color:'#0d0d0d', theme_color:'#0d0d0d', icons:[{ src:`data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="#0d0d0d"/><text x="256" y="360" font-size="280" text-anchor="middle">🏋️</text></svg>')}`, sizes:'512x512', type:'image/svg+xml' }] };
+    const blob = new Blob([JSON.stringify(m)],{type:'application/manifest+json'});
+    const link = Object.assign(document.createElement('link'),{rel:'manifest',href:URL.createObjectURL(blob)});
+    document.head.appendChild(link);
+} catch(e) {}
+</script>
+</body>
+</html>
