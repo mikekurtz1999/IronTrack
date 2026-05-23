@@ -293,6 +293,61 @@
         .template-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
         .template-count { font-size: 11px; color: var(--text-dim); margin-top: 3px; font-weight: 600; }
 
+        /* REST TIMER BAR */
+        #rest-bar {
+            position: fixed; left: 0; right: 0;
+            bottom: var(--nav-h);
+            background: #1e1e1e; border-top: 1px solid var(--border);
+            z-index: 50; padding: 10px 16px 10px;
+            display: none; align-items: center; gap: 12px;
+        }
+        #rest-bar.active { display: flex; }
+        .rest-bar-left { display: flex; flex-direction: column; gap: 2px; min-width: 52px; }
+        .rest-bar-label { font-size: 9px; font-weight: 800; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; }
+        #rest-bar-time { font-size: 22px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; }
+        .rest-bar-track { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+        #rest-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 1s linear; }
+        .rest-bar-btns { display: flex; gap: 6px; flex-shrink: 0; }
+        .rest-bar-btn {
+            padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border);
+            background: var(--card); color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer;
+        }
+        .rest-bar-btn.skip { color: var(--text-muted); }
+
+        /* OVERLOAD NUDGE */
+        .nudge-bar {
+            background: rgba(240,165,0,0.08); border: 1px solid rgba(240,165,0,0.2);
+            border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 0;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: none; border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+        }
+        .nudge-text { font-size: 12px; color: var(--accent); font-weight: 600; }
+        .nudge-sub  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+        /* CALCULATOR TABS */
+        .calc-tabs { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px; margin-bottom: 18px; }
+        .calc-tab { flex: 1; padding: 8px; border: none; border-radius: 6px; background: none; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+        .calc-tab.active { background: var(--accent); color: #000; }
+
+        /* PLATE CALCULATOR */
+        .plate-visual { display: flex; align-items: center; justify-content: center; gap: 3px; margin: 18px 0; flex-wrap: wrap; }
+        .plate {
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 6px; font-size: 11px; font-weight: 800;
+            color: #fff; flex-shrink: 0;
+        }
+        .bar-collar { width: 8px; height: 36px; background: #555; border-radius: 3px; }
+        .bar-sleeve { width: 40px; height: 12px; background: #444; border-radius: 2px; }
+
+        /* CUSTOM TEMPLATES */
+        .template-create-card {
+            background: none; border: 2px dashed var(--border);
+            border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            cursor: pointer; color: var(--text-muted); font-size: 14px; font-weight: 600;
+        }
+        .template-create-card:active { opacity: 0.7; }
+
         @keyframes fadeSlideUp {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -314,6 +369,18 @@
         <div id="screen-calculator" class="screen"><div id="calc-content"></div></div>
         <div id="screen-exercises" class="screen"><div id="exercises-content"></div></div>
         <div id="screen-history" class="screen"><div id="history-content"></div></div>
+    </div>
+
+    <div id="rest-bar">
+        <div class="rest-bar-left">
+            <span class="rest-bar-label">Rest</span>
+            <span id="rest-bar-time">1:30</span>
+        </div>
+        <div class="rest-bar-track"><div id="rest-bar-fill" style="width:100%"></div></div>
+        <div class="rest-bar-btns">
+            <button class="rest-bar-btn" onclick="addRest(30)">+30s</button>
+            <button class="rest-bar-btn skip" onclick="skipRest()">Skip</button>
+        </div>
     </div>
 
     <nav id="bottom-nav">
@@ -414,6 +481,33 @@
         </div>
         <div id="calc-1rm-preview" style="text-align:center; font-size:14px; color:var(--text-muted); min-height:28px; padding:8px 0 14px;"></div>
         <button class="btn btn-primary" onclick="save1RM()">Save 1RM</button>
+    </div>
+</div>
+
+<!-- OVERLAY: Create Custom Template -->
+<div id="overlay-custom-template" class="overlay">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Create Template</div>
+        <div class="input-group">
+            <div class="input-label">Template Name</div>
+            <input type="text" id="ct-name" placeholder="e.g. My Push Day" autocomplete="off">
+        </div>
+        <div class="input-group">
+            <div class="input-label">Color</div>
+            <div id="ct-colors" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+                <div class="ct-color active" data-color="#f0a500" style="background:#f0a500;width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid #fff;"></div>
+                <div class="ct-color" data-color="#ef4444" style="background:#ef4444;width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;"></div>
+                <div class="ct-color" data-color="#3b82f6" style="background:#3b82f6;width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;"></div>
+                <div class="ct-color" data-color="#22c55e" style="background:#22c55e;width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;"></div>
+                <div class="ct-color" data-color="#a855f7" style="background:#a855f7;width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;"></div>
+                <div class="ct-color" data-color="#06b6d4" style="background:#06b6d4;width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;"></div>
+            </div>
+        </div>
+        <div class="section-label" style="margin-top:16px;">Exercises</div>
+        <div id="ct-exercises-list"></div>
+        <button class="btn btn-outline" style="margin-bottom:12px;" onclick="openAddExToCustomTemplate()">+ Add Exercise</button>
+        <button class="btn btn-primary" onclick="saveCustomTemplate()">Save Template</button>
     </div>
 </div>
 
@@ -696,7 +790,16 @@ let S = {
     calcExId: null,
     set1rmExId: null,
     editWorkoutId: null,
+    customTemplates: [],
+    restDuration: 90,   // default rest seconds
+    calcTab: 'orm',     // 'orm' | 'plates'
     _timer: null,
+    _restInterval: null,
+    _restRemaining: 0,
+    _restTotal: 0,
+    _ctColor: '#f0a500',
+    _ctExercises: [],   // [{id, sets, reps}] being built
+    _addingToCustomTemplate: false,
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -705,7 +808,9 @@ let S = {
 function save() {
     localStorage.setItem('irontrack_v1', JSON.stringify({
         exercises: S.exercises, workouts: S.workouts,
-        prs: S.prs, activeWorkout: S.activeWorkout, unit: S.unit
+        prs: S.prs, activeWorkout: S.activeWorkout,
+        unit: S.unit, restDuration: S.restDuration,
+        customTemplates: S.customTemplates,
     }));
 }
 
@@ -719,7 +824,9 @@ function loadData() {
         S.workouts      = d.workouts      || [];
         S.prs           = d.prs           || {};
         S.activeWorkout = d.activeWorkout || null;
-        S.unit          = d.unit          || 'lbs';
+        S.unit            = d.unit            || 'lbs';
+        S.restDuration    = d.restDuration    || 90;
+        S.customTemplates = d.customTemplates || [];
     } catch(e) {}
 }
 
@@ -899,19 +1006,25 @@ function renderWorkout() {
     const el = document.getElementById('workout-content');
 
     if (!S.activeWorkout) {
-        const tCards = TEMPLATES.map(t => `
+        const allTemplates = [...TEMPLATES, ...S.customTemplates];
+        const tCards = allTemplates.map(t => `
             <div class="template-card" onclick="previewTemplate('${t.id}')" style="border-color:${t.color}20;">
                 <div class="template-dot" style="background:${t.color};"></div>
-                <div>
+                <div style="flex:1;">
                     <div class="template-name">${t.name}</div>
-                    <div class="template-desc">${t.desc}</div>
+                    <div class="template-desc">${t.desc || ''}</div>
                     <div class="template-count">${t.exercises.length} exercises</div>
                 </div>
+                ${t._custom ? `<button onclick="event.stopPropagation();deleteCustomTemplate('${t.id}')" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:4px;">✕</button>` : ''}
             </div>`).join('');
         el.innerHTML = `
             <button class="btn btn-primary" onclick="startWorkout()">+ Start Empty Workout</button>
             <div class="section-label" style="margin-top:20px;">Start from Template</div>
-            ${tCards}`;
+            ${tCards}
+            <div class="template-create-card" onclick="openCreateTemplate()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Create Custom Template
+            </div>`;
         return;
     }
 
@@ -932,8 +1045,17 @@ function renderWorkout() {
         const pr  = S.prs[entry.exerciseId];
         const prTxt = pr ? `PR: ${Math.round(pr.est1RM)} ${S.unit} est. 1RM` : 'No PR yet — get after it';
 
+        const nudge = getOverloadSuggestion(entry.exerciseId);
+        const nudgeHtml = nudge ? `<div class="nudge-bar">
+            <div>
+                <div class="nudge-text">${nudge.emoji} ${nudge.action}</div>
+                <div class="nudge-sub">${nudge.detail}</div>
+            </div>
+        </div>` : '';
+
         h += `<div class="exercise-block anim">
-            <div class="exercise-block-header">
+            ${nudgeHtml}
+            <div class="exercise-block-header" style="${nudge?'border-top:none;':''}">
                 <div>
                     <div class="exercise-block-name">${ex ? ex.name : entry.exerciseId}</div>
                     <div class="exercise-block-sub">${prTxt}</div>
@@ -986,8 +1108,10 @@ function updateSet(ei, si, field, val) {
 }
 
 function toggleDone(ei, si) {
-    S.activeWorkout.entries[ei].sets[si].done ^= true;
+    const set = S.activeWorkout.entries[ei].sets[si];
+    set.done ^= true;
     save(); renderWorkout();
+    if (set.done) startRest();
 }
 
 function addSet(ei) {
@@ -1031,21 +1155,6 @@ function filterAddExercises(q) {
     });
 }
 
-function addExToWorkout(exId) {
-    if (S._addingToEdit) { addExToEdit(exId); return; }
-    if (!S.activeWorkout) return;
-    // Pre-fill from last session
-    const lastW = [...S.workouts].reverse().find(w => w.entries.some(e => e.exerciseId === exId));
-    let sets = [{ weight:'', reps:'', done:false }];
-    if (lastW) {
-        const lastEntry = lastW.entries.find(e => e.exerciseId === exId);
-        if (lastEntry?.sets?.length) sets = lastEntry.sets.map(s => ({ weight:s.weight, reps:s.reps, done:false }));
-    }
-    S.activeWorkout.entries.push({ exerciseId: exId, sets });
-    save();
-    closeOverlay('overlay-add-exercise');
-    renderWorkout();
-}
 
 function promptEndWorkout() {
     const entries = S.activeWorkout.entries;
@@ -1075,6 +1184,7 @@ function finishWorkout() {
 // CALCULATOR SCREEN
 // ─────────────────────────────────────────────────────────────
 function renderCalculator() {
+    if (S.calcTab === 'plates') { renderPlateCalc(); return; }
     const pr  = S.calcExId ? S.prs[S.calcExId] : null;
     const orm = pr ? Math.round(pr.est1RM) : null;
 
@@ -1084,6 +1194,10 @@ function renderCalculator() {
     }).join('');
 
     let h = `
+        <div class="calc-tabs">
+            <button class="calc-tab active" onclick="S.calcTab='orm';renderCalculator()">1RM Calculator</button>
+            <button class="calc-tab" onclick="S.calcTab='plates';renderCalculator()">Plate Calculator</button>
+        </div>
         <div class="section-label">Exercise</div>
         <select onchange="setCalcEx(this.value)" style="margin-bottom:16px;">
             <option value="">— Select Exercise —</option>
@@ -1577,6 +1691,305 @@ function applyTemplate(tId) {
     save();
     closeOverlay('overlay-template');
     navigate('workout');
+}
+
+// ─────────────────────────────────────────────────────────────
+// REST TIMER
+// ─────────────────────────────────────────────────────────────
+function startRest(seconds) {
+    const dur = seconds || S.restDuration;
+    clearInterval(S._restInterval);
+    S._restRemaining = dur;
+    S._restTotal = dur;
+    document.getElementById('rest-bar').classList.add('active');
+    updateRestBar();
+    S._restInterval = setInterval(() => {
+        S._restRemaining--;
+        if (S._restRemaining <= 0) {
+            S._restRemaining = 0;
+            updateRestBar();
+            clearInterval(S._restInterval);
+            restBeep();
+            setTimeout(() => document.getElementById('rest-bar').classList.remove('active'), 2000);
+        } else {
+            updateRestBar();
+        }
+    }, 1000);
+}
+
+function updateRestBar() {
+    const t = document.getElementById('rest-bar-time');
+    const f = document.getElementById('rest-bar-fill');
+    if (!t) return;
+    t.textContent = fmtMs(S._restRemaining * 1000);
+    const pct = S._restTotal > 0 ? (S._restRemaining / S._restTotal) * 100 : 0;
+    f.style.width = pct + '%';
+    f.style.background = pct > 40 ? 'var(--accent)' : pct > 15 ? '#f97316' : 'var(--strength)';
+}
+
+function addRest(sec) {
+    S._restRemaining = Math.min(S._restRemaining + sec, 600);
+    S._restTotal = Math.max(S._restTotal, S._restRemaining);
+    updateRestBar();
+}
+
+function skipRest() {
+    clearInterval(S._restInterval);
+    S._restRemaining = 0;
+    document.getElementById('rest-bar').classList.remove('active');
+}
+
+function restBeep() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [880, 1100, 1320].forEach((freq, i) => {
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.connect(g); g.connect(ctx.destination);
+            o.frequency.value = freq;
+            o.type = 'sine';
+            const t = ctx.currentTime + i * 0.18;
+            g.gain.setValueAtTime(0.4, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+            o.start(t); o.stop(t + 0.15);
+        });
+    } catch(e) {}
+    try { navigator.vibrate && navigator.vibrate([100, 80, 100]); } catch(e) {}
+}
+
+// ─────────────────────────────────────────────────────────────
+// PROGRESSIVE OVERLOAD SUGGESTIONS
+// ─────────────────────────────────────────────────────────────
+function getOverloadSuggestion(exId) {
+    const history = [...S.workouts].reverse().filter(w => w.entries.some(e => e.exerciseId === exId));
+    if (!history.length) return null;
+
+    const lastW     = history[0];
+    const lastEntry = lastW.entries.find(e => e.exerciseId === exId);
+    const sets      = (lastEntry?.sets || []).filter(s => s.weight && s.reps);
+    if (!sets.length) return null;
+
+    const allDone    = sets.every(s => s.done !== false);
+    const avgW       = sets.reduce((a,s) => a + parseFloat(s.weight), 0) / sets.length;
+    const lastReps   = sets[0].reps;
+    const ex         = getEx(exId);
+    const isLower    = ['Quads','Hamstrings','Glutes','Calves'].includes(ex?.cat);
+    const increment  = isLower ? 5 : 2.5;
+    const donePct    = sets.filter(s => s.done).length / sets.length;
+
+    const lastDate   = fmtDate(new Date(lastW.startTime));
+    const setsStr    = `${sets.length}×${lastReps} @ ${avgW} ${S.unit}`;
+
+    if (allDone || donePct >= 0.8) {
+        return { emoji:'📈', action:`Add weight — aim for ${avgW + increment} ${S.unit}`, detail:`Last session: ${setsStr} · ${lastDate}` };
+    } else if (donePct >= 0.5) {
+        return { emoji:'🔁', action:`Same weight — ${avgW} ${S.unit} × ${lastReps}`, detail:`Last session: ${setsStr} · ${lastDate}` };
+    } else {
+        return { emoji:'🔽', action:`Reduce weight — try ${Math.round((avgW * 0.9) / 2.5) * 2.5} ${S.unit}`, detail:`Last session: ${setsStr} · ${lastDate}` };
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// PLATE CALCULATOR
+// ─────────────────────────────────────────────────────────────
+const PLATES_LBS = [45, 35, 25, 10, 5, 2.5];
+const PLATES_KG  = [25, 20, 15, 10, 5, 2.5, 1.25];
+const PLATE_COLORS = { 45:'#3b82f6', 35:'#f0a500', 25:'#22c55e', 20:'#a855f7', 15:'#f97316', 10:'#ffffff', 5:'#ef4444', 2.5:'#888', 1.25:'#555' };
+const PLATE_DIMS = { 45:72, 35:64, 25:58, 20:54, 15:50, 10:44, 5:38, 2.5:32, 1.25:28 };
+
+function calcPlates(target, barWeight) {
+    const plates = S.unit === 'lbs' ? PLATES_LBS : PLATES_KG;
+    let remaining = (target - barWeight) / 2;
+    const result = [];
+    for (const p of plates) {
+        while (remaining >= p - 0.01) { result.push(p); remaining -= p; }
+    }
+    return { plates: result, remainder: Math.round(remaining * 100) / 100 };
+}
+
+function renderPlateCalc() {
+    const el = document.getElementById('calc-content');
+    const barOpts = S.unit === 'lbs'
+        ? [45, 35, 15].map(w => `<option value="${w}" ${w===45?'selected':''}>${w} lbs bar</option>`).join('')
+        : [20, 15, 10].map(w => `<option value="${w}" ${w===20?'selected':''}>${w} kg bar</option>`).join('');
+
+    el.innerHTML = `
+        <div class="calc-tabs">
+            <button class="calc-tab" onclick="S.calcTab='orm';renderCalculator()">1RM Calculator</button>
+            <button class="calc-tab active" onclick="S.calcTab='plates';renderCalculator()">Plate Calculator</button>
+        </div>
+        <div class="section-label">Bar Weight</div>
+        <select id="pc-bar" onchange="updatePlateCalc()" style="margin-bottom:14px;">${barOpts}</select>
+        <div class="section-label">Target Weight</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:4px;">
+            <input type="number" id="pc-target" inputmode="decimal" placeholder="e.g. 225" oninput="updatePlateCalc()">
+            <span style="color:var(--text-muted);font-size:14px;">${S.unit}</span>
+        </div>
+        <div id="pc-result" style="margin-top:4px;"></div>`;
+}
+
+function updatePlateCalc() {
+    const target = parseFloat(document.getElementById('pc-target').value);
+    const bar    = parseFloat(document.getElementById('pc-bar').value);
+    const el     = document.getElementById('pc-result');
+    if (!target || target <= bar) { el.innerHTML = ''; return; }
+
+    const { plates, remainder } = calcPlates(target, bar);
+    const actual = bar + plates.reduce((a,p) => a+p, 0) * 2;
+    const close  = remainder > 0 ? `<div style="font-size:12px;color:var(--strength);margin-top:6px;">⚠️ Can't make exactly ${target} ${S.unit} — closest is ${actual} ${S.unit}</div>` : '';
+
+    // Visual bar
+    const leftPlates  = [...plates].reverse();
+    const rightPlates = [...plates];
+    const plateVisual = (arr) => arr.map(p => {
+        const h = PLATE_DIMS[p] || 36;
+        const c = PLATE_COLORS[p] || '#888';
+        const textColor = p >= 10 ? '#000' : '#fff';
+        return `<div class="plate" style="width:18px;height:${h}px;background:${c};color:${textColor};writing-mode:vertical-rl;font-size:9px;">${p}</div>`;
+    }).join('');
+
+    el.innerHTML = `
+        <div class="plate-visual">
+            ${plateVisual(leftPlates)}
+            <div class="bar-collar"></div>
+            <div class="bar-sleeve"></div>
+            <div style="font-size:13px;font-weight:800;padding:0 8px;white-space:nowrap;">${actual} ${S.unit}</div>
+            <div class="bar-sleeve"></div>
+            <div class="bar-collar"></div>
+            ${plateVisual(rightPlates)}
+        </div>
+        <div class="card" style="margin-top:8px;">
+            <div style="font-size:13px;font-weight:700;margin-bottom:10px;">Each side needs:</div>
+            ${plates.length ? plates.map(p => `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+                <div style="width:16px;height:16px;border-radius:3px;background:${PLATE_COLORS[p]||'#888'};flex-shrink:0;"></div>
+                <span style="font-size:14px;font-weight:600;">${p} ${S.unit} plate</span>
+            </div>`).join('') : '<div style="color:var(--text-muted);font-size:13px;">Only bar weight</div>'}
+        </div>
+        ${close}`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// CUSTOM TEMPLATES
+// ─────────────────────────────────────────────────────────────
+function openCreateTemplate() {
+    S._ctColor = '#f0a500';
+    S._ctExercises = [];
+    document.getElementById('ct-name').value = '';
+    renderCtExercises();
+    document.querySelectorAll('.ct-color').forEach(el => {
+        el.style.border = el.dataset.color === S._ctColor ? '3px solid #fff' : '3px solid transparent';
+    });
+    openOverlay('overlay-custom-template');
+}
+
+function renderCtExercises() {
+    const el = document.getElementById('ct-exercises-list');
+    if (!S._ctExercises.length) {
+        el.innerHTML = `<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:12px 0;">No exercises yet</div>`;
+        return;
+    }
+    el.innerHTML = S._ctExercises.map((te, i) => {
+        const ex = getEx(te.id);
+        return `<div class="card-sm flex-between" style="margin-bottom:6px;">
+            <div>
+                <div style="font-size:14px;font-weight:600;">${ex ? ex.name : te.id}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${te.sets} sets × ${te.reps} reps</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <div style="display:flex;gap:4px;">
+                    <button onclick="ctEditReps(${i},-1)" style="background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:2px 8px;cursor:pointer;font-size:13px;">−</button>
+                    <button onclick="ctEditReps(${i},1)"  style="background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:2px 8px;cursor:pointer;font-size:13px;">+</button>
+                </div>
+                <button onclick="ctRemoveEx(${i})" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;">✕</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function ctEditReps(i, delta) {
+    S._ctExercises[i].reps = Math.max(1, (S._ctExercises[i].reps || 10) + delta);
+    renderCtExercises();
+}
+
+function ctRemoveEx(i) {
+    S._ctExercises.splice(i, 1);
+    renderCtExercises();
+}
+
+function openAddExToCustomTemplate() {
+    S._addingToCustomTemplate = true;
+    S._addingToEdit = false;
+    const cats = [...new Set(S.exercises.map(e => e.cat))];
+    let h = '';
+    cats.forEach(cat => {
+        h += `<div class="cat-header">${cat}</div>`;
+        S.exercises.filter(e => e.cat === cat).forEach(ex => {
+            h += `<div class="exercise-card" onclick="addExToCustomTemplate('${ex.id}')">
+                <div class="exercise-name">${ex.name}</div>
+                <span style="color:var(--accent);font-size:20px;font-weight:700;">+</span>
+            </div>`;
+        });
+    });
+    document.getElementById('add-exercise-list').innerHTML = h;
+    document.getElementById('ex-search').value = '';
+    openOverlay('overlay-add-exercise');
+}
+
+function addExToCustomTemplate(exId) {
+    S._addingToCustomTemplate = false;
+    S._ctExercises.push({ id: exId, sets: 3, reps: 10 });
+    closeOverlay('overlay-add-exercise');
+    renderCtExercises();
+}
+
+function saveCustomTemplate() {
+    const name = document.getElementById('ct-name').value.trim();
+    if (!name) { alert('Give your template a name first.'); return; }
+    if (!S._ctExercises.length) { alert('Add at least one exercise.'); return; }
+    const t = {
+        id: 'custom-' + Date.now(),
+        name,
+        desc: S._ctExercises.map(te => getEx(te.id)?.cat).filter((v,i,a) => a.indexOf(v)===i).join(' · '),
+        color: S._ctColor,
+        exercises: [...S._ctExercises],
+        _custom: true,
+    };
+    S.customTemplates.push(t);
+    save();
+    closeOverlay('overlay-custom-template');
+    navigate('workout');
+}
+
+function deleteCustomTemplate(tId) {
+    if (!confirm('Delete this template?')) return;
+    S.customTemplates = S.customTemplates.filter(t => t.id !== tId);
+    save(); renderWorkout();
+}
+
+// Wire up color picker
+document.addEventListener('click', e => {
+    if (e.target.classList.contains('ct-color')) {
+        S._ctColor = e.target.dataset.color;
+        document.querySelectorAll('.ct-color').forEach(el => {
+            el.style.border = el.dataset.color === S._ctColor ? '3px solid #fff' : '3px solid transparent';
+        });
+    }
+});
+
+// Patch addExToWorkout for custom template context
+const _origAddExToWorkout2 = addExToWorkout;
+function addExToWorkout(exId) {
+    if (S._addingToCustomTemplate) { addExToCustomTemplate(exId); return; }
+    if (S._addingToEdit)           { addExToEdit(exId); return; }
+    if (!S.activeWorkout) return;
+    // Pre-fill from last session
+    const lastW = [...S.workouts].reverse().find(w => w.entries.some(e => e.exerciseId === exId));
+    let sets = [{ weight:'', reps:'', done:false }];
+    if (lastW) {
+        const le = lastW.entries.find(e => e.exerciseId === exId);
+        if (le?.sets?.length) sets = le.sets.map(s => ({ weight:s.weight, reps:s.reps, done:false }));
+    }
+    S.activeWorkout.entries.push({ exerciseId: exId, sets });
+    save(); closeOverlay('overlay-add-exercise'); renderWorkout();
 }
 
 // ─────────────────────────────────────────────────────────────
