@@ -417,6 +417,14 @@
     </div>
 </div>
 
+<!-- OVERLAY: Edit Past Workout -->
+<div id="overlay-edit-workout" class="overlay">
+    <div class="sheet" style="max-height:92vh;">
+        <div class="sheet-handle"></div>
+        <div id="edit-workout-content"></div>
+    </div>
+</div>
+
 <!-- OVERLAY: Template Detail -->
 <div id="overlay-template" class="overlay">
     <div class="sheet">
@@ -687,6 +695,7 @@ let S = {
     screen: 'home',
     calcExId: null,
     set1rmExId: null,
+    editWorkoutId: null,
     _timer: null,
 };
 
@@ -1023,6 +1032,7 @@ function filterAddExercises(q) {
 }
 
 function addExToWorkout(exId) {
+    if (S._addingToEdit) { addExToEdit(exId); return; }
     if (!S.activeWorkout) return;
     // Pre-fill from last session
     const lastW = [...S.workouts].reverse().find(w => w.entries.some(e => e.exerciseId === exId));
@@ -1287,8 +1297,11 @@ function renderHistory() {
         const exNames = w.entries.map(e => getEx(e.exerciseId)?.name || e.exerciseId);
         const sets = w.entries.reduce((a,e) => a + e.sets.filter(s=>s.weight&&s.reps).length, 0);
         const vol  = w.entries.reduce((a,e) => a + e.sets.reduce((b,s) => b+(parseFloat(s.weight)||0)*(parseInt(s.reps)||0), 0), 0);
-        h += `<div class="history-card">
-            <div class="history-date">${fmtDate(new Date(w.startTime))} · ${fmtMs(w.duration||0)}</div>
+        h += `<div class="history-card" onclick="openEditWorkout(${w.id})" style="cursor:pointer;">
+            <div class="flex-between">
+                <div class="history-date">${fmtDate(new Date(w.startTime))} · ${fmtMs(w.duration||0)}</div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </div>
             <div class="history-exercises">${exNames.slice(0,3).join(', ')}${exNames.length>3?' +' + (exNames.length-3) + ' more':''}</div>
             <div class="history-stats">${sets} sets · ${Math.round(vol).toLocaleString()} ${S.unit} total volume</div>
         </div>`;
@@ -1355,6 +1368,166 @@ function saveNewExercise() {
     save(); closeOverlay('overlay-new-exercise');
     document.getElementById('new-exercise-name').value = '';
     renderExercises();
+}
+
+// ─────────────────────────────────────────────────────────────
+// EDIT PAST WORKOUT
+// ─────────────────────────────────────────────────────────────
+function getEditWorkout() {
+    return S.workouts.find(w => w.id === S.editWorkoutId);
+}
+
+function openEditWorkout(wId) {
+    S.editWorkoutId = wId;
+    renderEditWorkout();
+    openOverlay('overlay-edit-workout');
+}
+
+function renderEditWorkout() {
+    const w = getEditWorkout();
+    if (!w) return;
+    const date = new Date(w.startTime).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+
+    let h = `
+        <div class="flex-between" style="margin-bottom:16px;">
+            <div>
+                <div style="font-size:16px;font-weight:800;">${date}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">${fmtMs(w.duration||0)} · ${w.entries.length} exercise${w.entries.length!==1?'s':''}</div>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="confirmDeleteWorkout(${w.id})">Delete</button>
+        </div>`;
+
+    w.entries.forEach((entry, ei) => {
+        const ex  = getEx(entry.exerciseId);
+        const pr  = S.prs[entry.exerciseId];
+        const prTxt = pr ? `PR: ${Math.round(pr.est1RM)} ${S.unit} est. 1RM` : '';
+
+        h += `<div class="exercise-block anim">
+            <div class="exercise-block-header">
+                <div>
+                    <div class="exercise-block-name">${ex ? ex.name : entry.exerciseId}</div>
+                    ${prTxt ? `<div class="exercise-block-sub">${prTxt}</div>` : ''}
+                </div>
+                <button class="remove-btn" onclick="removeEditEntry(${ei})">✕</button>
+            </div>
+            <div class="set-cols set-header"><span></span><span>Weight (${S.unit})</span><span>Reps</span><span></span></div>`;
+
+        entry.sets.forEach((set, si) => {
+            h += `<div class="set-row set-cols">
+                <div class="set-num">${si+1}</div>
+                <input class="set-input" type="number" inputmode="decimal" placeholder="—" value="${set.weight||''}" step="2.5"
+                    onchange="updateEditSet(${ei},${si},'weight',this.value)" onfocus="this.select()">
+                <input class="set-input" type="number" inputmode="numeric" placeholder="—" value="${set.reps||''}"
+                    onchange="updateEditSet(${ei},${si},'reps',this.value)" onfocus="this.select()">
+                <div class="set-check ${set.done?'done':''}" onclick="toggleEditDone(${ei},${si})">
+                    ${set.done ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+                </div>
+            </div>`;
+        });
+
+        h += `<button class="add-set-btn" onclick="addEditSet(${ei})">+ Add Set</button></div>`;
+    });
+
+    h += `
+        <button class="btn btn-outline" style="margin-top:8px;" onclick="openAddExerciseToEdit()">+ Add Exercise</button>
+        <button class="btn btn-primary" style="margin-top:10px;" onclick="saveEditedWorkout()">Save Changes</button>
+        <div style="height:4px;"></div>`;
+
+    document.getElementById('edit-workout-content').innerHTML = h;
+}
+
+function updateEditSet(ei, si, field, val) {
+    const w = getEditWorkout(); if (!w) return;
+    const n = parseFloat(val);
+    w.entries[ei].sets[si][field] = isNaN(n) ? '' : n;
+}
+
+function toggleEditDone(ei, si) {
+    const w = getEditWorkout(); if (!w) return;
+    w.entries[ei].sets[si].done ^= true;
+    renderEditWorkout();
+}
+
+function addEditSet(ei) {
+    const w = getEditWorkout(); if (!w) return;
+    const sets = w.entries[ei].sets;
+    const last = sets[sets.length - 1] || {};
+    sets.push({ weight: last.weight||'', reps: last.reps||'', done: false });
+    renderEditWorkout();
+}
+
+function removeEditEntry(ei) {
+    const w = getEditWorkout(); if (!w) return;
+    w.entries.splice(ei, 1);
+    renderEditWorkout();
+}
+
+function openAddExerciseToEdit() {
+    // Reuse add-exercise overlay but wire it to edit context
+    S._addingToEdit = true;
+    const cats = [...new Set(S.exercises.map(e => e.cat))];
+    let h = '';
+    cats.forEach(cat => {
+        const exs = S.exercises.filter(e => e.cat === cat);
+        h += `<div class="cat-header" data-ahcat="${cat}">${cat}</div>`;
+        exs.forEach(ex => {
+            const pr = S.prs[ex.id];
+            h += `<div class="exercise-card" data-ahcard="${ex.id}" onclick="addExToEdit('${ex.id}')">
+                <div>
+                    <div class="exercise-name">${ex.name}</div>
+                    <div class="exercise-pr">${pr ? `Best: <strong>${Math.round(pr.est1RM)} ${S.unit}</strong> est. 1RM` : 'No data yet'}</div>
+                </div>
+                <span style="color:var(--accent);font-size:20px;font-weight:700;">+</span>
+            </div>`;
+        });
+    });
+    document.getElementById('add-exercise-list').innerHTML = h;
+    document.getElementById('ex-search').value = '';
+    openOverlay('overlay-add-exercise');
+}
+
+function addExToEdit(exId) {
+    if (!S._addingToEdit) { addExToWorkout(exId); return; }
+    S._addingToEdit = false;
+    const w = getEditWorkout(); if (!w) return;
+    w.entries.push({ exerciseId: exId, sets: [{ weight:'', reps:'', done:false }] });
+    closeOverlay('overlay-add-exercise');
+    renderEditWorkout();
+}
+
+function saveEditedWorkout() {
+    const w = getEditWorkout(); if (!w) return;
+    // Recalculate PRs for all exercises touched in this workout
+    const exIds = w.entries.map(e => e.exerciseId);
+    exIds.forEach(exId => {
+        let best = null;
+        S.workouts.forEach(wo => {
+            wo.entries.filter(e => e.exerciseId === exId).forEach(entry => {
+                entry.sets.forEach(set => {
+                    if (set.weight && set.reps) {
+                        const est = epley(parseFloat(set.weight), parseInt(set.reps));
+                        if (!best || est > best.est1RM) {
+                            best = { weight: set.weight, reps: set.reps, est1RM: est, date: wo.startTime };
+                        }
+                    }
+                });
+            });
+        });
+        if (best && (!S.prs[exId] || best.est1RM >= S.prs[exId].est1RM)) {
+            S.prs[exId] = best;
+        }
+    });
+    save();
+    closeOverlay('overlay-edit-workout');
+    renderHistory();
+}
+
+function confirmDeleteWorkout(wId) {
+    if (!confirm('Delete this workout? This cannot be undone.')) return;
+    S.workouts = S.workouts.filter(w => w.id !== wId);
+    save();
+    closeOverlay('overlay-edit-workout');
+    renderHistory();
 }
 
 // ─────────────────────────────────────────────────────────────
