@@ -280,6 +280,19 @@
         .empty-sub { font-size: 14px; line-height: 1.6; }
         ::-webkit-scrollbar { width: 0; }
 
+        /* TEMPLATE CARDS */
+        .template-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 14px;
+            cursor: pointer; user-select: none;
+        }
+        .template-card:active { opacity: 0.75; }
+        .template-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .template-name { font-size: 15px; font-weight: 700; }
+        .template-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .template-count { font-size: 11px; color: var(--text-dim); margin-top: 3px; font-weight: 600; }
+
         @keyframes fadeSlideUp {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -404,6 +417,14 @@
     </div>
 </div>
 
+<!-- OVERLAY: Template Detail -->
+<div id="overlay-template" class="overlay">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div id="template-detail-content"></div>
+    </div>
+</div>
+
 <!-- OVERLAY: New Custom Exercise -->
 <div id="overlay-new-exercise" class="overlay">
     <div class="sheet">
@@ -433,40 +454,185 @@
 // EXERCISE LIBRARY
 // ─────────────────────────────────────────────────────────────
 const DEFAULT_EXERCISES = [
-    { id:'squat',        name:'Back Squat',          cat:'Legs' },
-    { id:'front-squat',  name:'Front Squat',          cat:'Legs' },
-    { id:'deadlift',     name:'Deadlift',             cat:'Legs' },
-    { id:'rdl',          name:'Romanian Deadlift',    cat:'Legs' },
-    { id:'leg-press',    name:'Leg Press',            cat:'Legs' },
-    { id:'lunge',        name:'Walking Lunge',        cat:'Legs' },
-    { id:'hack-squat',   name:'Hack Squat',           cat:'Legs' },
-    { id:'leg-curl',     name:'Leg Curl',             cat:'Legs' },
-    { id:'leg-ext',      name:'Leg Extension',        cat:'Legs' },
-    { id:'calf-raise',   name:'Standing Calf Raise',  cat:'Legs' },
-    { id:'bench',        name:'Bench Press',          cat:'Push' },
-    { id:'incline',      name:'Incline Bench Press',  cat:'Push' },
-    { id:'db-bench',     name:'DB Bench Press',       cat:'Push' },
-    { id:'ohp',          name:'Overhead Press',       cat:'Push' },
-    { id:'db-shoulder',  name:'DB Shoulder Press',    cat:'Push' },
-    { id:'lat-raise',    name:'Lateral Raise',        cat:'Push' },
-    { id:'tricep-ext',   name:'Tricep Extension',     cat:'Push' },
-    { id:'skull-crusher',name:'Skull Crusher',        cat:'Push' },
-    { id:'chest-fly',    name:'Cable Chest Fly',      cat:'Push' },
-    { id:'dip',          name:'Dip',                  cat:'Push' },
-    { id:'barbell-row',  name:'Barbell Row',          cat:'Pull' },
-    { id:'pullup',       name:'Pull-Up',              cat:'Pull' },
-    { id:'chinup',       name:'Chin-Up',              cat:'Pull' },
-    { id:'lat-pulldown', name:'Lat Pulldown',         cat:'Pull' },
-    { id:'seated-row',   name:'Seated Cable Row',     cat:'Pull' },
-    { id:'face-pull',    name:'Face Pull',            cat:'Pull' },
-    { id:'barbell-curl', name:'Barbell Curl',         cat:'Pull' },
-    { id:'hammer-curl',  name:'Hammer Curl',          cat:'Pull' },
-    { id:'db-row',       name:'Single-Arm DB Row',    cat:'Pull' },
-    { id:'plank',        name:'Plank',                cat:'Core' },
-    { id:'ab-rollout',   name:'Ab Rollout',           cat:'Core' },
-    { id:'hanging-leg',  name:'Hanging Leg Raise',    cat:'Core' },
-    { id:'cable-crunch', name:'Cable Crunch',         cat:'Core' },
-    { id:'russian-twist',name:'Russian Twist',        cat:'Core' },
+    // ── LEGS ──────────────────────────────────────────────
+    { id:'squat',            name:'Back Squat',               cat:'Legs' },
+    { id:'front-squat',      name:'Front Squat',              cat:'Legs' },
+    { id:'deadlift',         name:'Deadlift',                 cat:'Legs' },
+    { id:'rdl',              name:'Romanian Deadlift',        cat:'Legs' },
+    { id:'sumo-deadlift',    name:'Sumo Deadlift',            cat:'Legs' },
+    { id:'leg-press',        name:'Leg Press',                cat:'Legs' },
+    { id:'hack-squat',       name:'Hack Squat',               cat:'Legs' },
+    { id:'bulgarian-split',  name:'Bulgarian Split Squat',    cat:'Legs' },
+    { id:'lunge',            name:'Walking Lunge',            cat:'Legs' },
+    { id:'reverse-lunge',    name:'Reverse Lunge',            cat:'Legs' },
+    { id:'step-up',          name:'Step-Up',                  cat:'Legs' },
+    { id:'good-morning',     name:'Good Morning',             cat:'Legs' },
+    { id:'leg-curl',         name:'Leg Curl (Lying)',         cat:'Legs' },
+    { id:'seated-leg-curl',  name:'Leg Curl (Seated)',        cat:'Legs' },
+    { id:'leg-ext',          name:'Leg Extension',            cat:'Legs' },
+    { id:'hip-thrust',       name:'Hip Thrust',               cat:'Legs' },
+    { id:'glute-bridge',     name:'Glute Bridge',             cat:'Legs' },
+    { id:'cable-kickback',   name:'Cable Glute Kickback',     cat:'Legs' },
+    { id:'adductor',         name:'Adductor Machine',         cat:'Legs' },
+    { id:'abductor',         name:'Abductor Machine',         cat:'Legs' },
+    { id:'calf-raise',       name:'Calf Raise (Standing)',    cat:'Legs' },
+    { id:'seated-calf',      name:'Calf Raise (Seated)',      cat:'Legs' },
+    { id:'nordic-curl',      name:'Nordic Curl',              cat:'Legs' },
+    // ── PUSH (Chest / Shoulders / Triceps) ────────────────
+    { id:'bench',            name:'Bench Press',              cat:'Push' },
+    { id:'incline',          name:'Incline Bench Press',      cat:'Push' },
+    { id:'decline-bench',    name:'Decline Bench Press',      cat:'Push' },
+    { id:'db-bench',         name:'DB Bench Press',           cat:'Push' },
+    { id:'incline-db-bench', name:'Incline DB Bench Press',   cat:'Push' },
+    { id:'close-grip-bench', name:'Close-Grip Bench Press',   cat:'Push' },
+    { id:'chest-fly',        name:'Cable Chest Fly',          cat:'Push' },
+    { id:'pec-deck',         name:'Pec Deck / Chest Machine', cat:'Push' },
+    { id:'db-fly',           name:'DB Fly',                   cat:'Push' },
+    { id:'pushup',           name:'Push-Up',                  cat:'Push' },
+    { id:'dip',              name:'Dip',                      cat:'Push' },
+    { id:'ohp',              name:'Overhead Press (Barbell)', cat:'Push' },
+    { id:'db-shoulder',      name:'DB Shoulder Press',        cat:'Push' },
+    { id:'arnold-press',     name:'Arnold Press',             cat:'Push' },
+    { id:'landmine-press',   name:'Landmine Press',           cat:'Push' },
+    { id:'lat-raise',        name:'Lateral Raise (DB)',       cat:'Push' },
+    { id:'cable-lat-raise',  name:'Lateral Raise (Cable)',    cat:'Push' },
+    { id:'front-raise',      name:'Front Raise',              cat:'Push' },
+    { id:'upright-row',      name:'Upright Row',              cat:'Push' },
+    { id:'rear-delt-fly',    name:'Rear Delt Fly',            cat:'Push' },
+    { id:'skull-crusher',    name:'Skull Crusher',            cat:'Push' },
+    { id:'tricep-ext',       name:'Tricep Extension (Cable)', cat:'Push' },
+    { id:'rope-pushdown',    name:'Rope Pushdown',            cat:'Push' },
+    { id:'tricep-oh-cable',  name:'Overhead Tricep (Cable)',  cat:'Push' },
+    { id:'tricep-kickback',  name:'Tricep Kickback',          cat:'Push' },
+    { id:'diamond-pushup',   name:'Diamond Push-Up',          cat:'Push' },
+    // ── PULL (Back / Biceps) ──────────────────────────────
+    { id:'barbell-row',      name:'Barbell Row',              cat:'Pull' },
+    { id:'db-row',           name:'Single-Arm DB Row',        cat:'Pull' },
+    { id:'tbar-row',         name:'T-Bar Row',                cat:'Pull' },
+    { id:'chest-sup-row',    name:'Chest-Supported Row',      cat:'Pull' },
+    { id:'pullup',           name:'Pull-Up',                  cat:'Pull' },
+    { id:'chinup',           name:'Chin-Up',                  cat:'Pull' },
+    { id:'lat-pulldown',     name:'Lat Pulldown',             cat:'Pull' },
+    { id:'seated-row',       name:'Seated Cable Row',         cat:'Pull' },
+    { id:'straight-arm-pd',  name:'Straight-Arm Pulldown',   cat:'Pull' },
+    { id:'face-pull',        name:'Face Pull',                cat:'Pull' },
+    { id:'shrug',            name:'Shrug',                    cat:'Pull' },
+    { id:'rack-pull',        name:'Rack Pull',                cat:'Pull' },
+    { id:'barbell-curl',     name:'Barbell Curl',             cat:'Pull' },
+    { id:'ezbar-curl',       name:'EZ Bar Curl',              cat:'Pull' },
+    { id:'hammer-curl',      name:'Hammer Curl',              cat:'Pull' },
+    { id:'incline-db-curl',  name:'Incline DB Curl',          cat:'Pull' },
+    { id:'preacher-curl',    name:'Preacher Curl',            cat:'Pull' },
+    { id:'concentration-curl',name:'Concentration Curl',      cat:'Pull' },
+    { id:'cable-curl',       name:'Cable Curl',               cat:'Pull' },
+    { id:'reverse-curl',     name:'Reverse Curl',             cat:'Pull' },
+    // ── CORE ──────────────────────────────────────────────
+    { id:'plank',            name:'Plank',                    cat:'Core' },
+    { id:'side-plank',       name:'Side Plank',               cat:'Core' },
+    { id:'ab-rollout',       name:'Ab Rollout',               cat:'Core' },
+    { id:'hanging-leg',      name:'Hanging Leg Raise',        cat:'Core' },
+    { id:'cable-crunch',     name:'Cable Crunch',             cat:'Core' },
+    { id:'decline-crunch',   name:'Decline Crunch',           cat:'Core' },
+    { id:'russian-twist',    name:'Russian Twist',            cat:'Core' },
+    { id:'dead-bug',         name:'Dead Bug',                 cat:'Core' },
+    { id:'pallof-press',     name:'Pallof Press',             cat:'Core' },
+    { id:'dragon-flag',      name:'Dragon Flag',              cat:'Core' },
+    { id:'landmine-twist',   name:'Landmine Twist',           cat:'Core' },
+    { id:'oblique-crunch',   name:'Oblique Crunch',           cat:'Core' },
+];
+
+// ─────────────────────────────────────────────────────────────
+// WORKOUT TEMPLATES
+// ─────────────────────────────────────────────────────────────
+const TEMPLATES = [
+    {
+        id: 'push',
+        name: 'Push Day',
+        desc: 'Chest · Shoulders · Triceps',
+        color: '#ef4444',
+        exercises: [
+            { id:'bench',           sets:4, reps:10 },
+            { id:'incline-db-bench',sets:3, reps:12 },
+            { id:'chest-fly',       sets:3, reps:12 },
+            { id:'ohp',             sets:3, reps:10 },
+            { id:'lat-raise',       sets:4, reps:15 },
+            { id:'rope-pushdown',   sets:3, reps:12 },
+            { id:'tricep-oh-cable', sets:3, reps:12 },
+        ]
+    },
+    {
+        id: 'pull',
+        name: 'Pull Day',
+        desc: 'Back · Biceps',
+        color: '#3b82f6',
+        exercises: [
+            { id:'barbell-row',     sets:4, reps:8  },
+            { id:'lat-pulldown',    sets:3, reps:10 },
+            { id:'seated-row',      sets:3, reps:10 },
+            { id:'straight-arm-pd', sets:3, reps:12 },
+            { id:'face-pull',       sets:3, reps:15 },
+            { id:'barbell-curl',    sets:3, reps:10 },
+            { id:'hammer-curl',     sets:3, reps:12 },
+        ]
+    },
+    {
+        id: 'legs',
+        name: 'Leg Day',
+        desc: 'Quads · Hamstrings · Glutes · Calves',
+        color: '#a855f7',
+        exercises: [
+            { id:'squat',           sets:4, reps:8  },
+            { id:'rdl',             sets:3, reps:10 },
+            { id:'leg-press',       sets:3, reps:12 },
+            { id:'hip-thrust',      sets:3, reps:12 },
+            { id:'leg-curl',        sets:3, reps:12 },
+            { id:'leg-ext',         sets:3, reps:15 },
+            { id:'calf-raise',      sets:4, reps:15 },
+        ]
+    },
+    {
+        id: 'upper',
+        name: 'Upper Body',
+        desc: 'Chest · Back · Shoulders · Arms',
+        color: '#f0a500',
+        exercises: [
+            { id:'bench',           sets:3, reps:8  },
+            { id:'barbell-row',     sets:3, reps:8  },
+            { id:'ohp',             sets:3, reps:10 },
+            { id:'lat-pulldown',    sets:3, reps:10 },
+            { id:'lat-raise',       sets:3, reps:15 },
+            { id:'skull-crusher',   sets:3, reps:10 },
+            { id:'barbell-curl',    sets:3, reps:10 },
+        ]
+    },
+    {
+        id: 'lower',
+        name: 'Lower Body',
+        desc: 'Quads · Hamstrings · Glutes · Calves',
+        color: '#22c55e',
+        exercises: [
+            { id:'squat',           sets:4, reps:6  },
+            { id:'rdl',             sets:3, reps:8  },
+            { id:'leg-press',       sets:3, reps:10 },
+            { id:'hip-thrust',      sets:3, reps:12 },
+            { id:'leg-curl',        sets:3, reps:10 },
+            { id:'calf-raise',      sets:4, reps:15 },
+        ]
+    },
+    {
+        id: 'fullbody',
+        name: 'Full Body',
+        desc: 'Compound movements, all muscle groups',
+        color: '#06b6d4',
+        exercises: [
+            { id:'squat',           sets:3, reps:6  },
+            { id:'bench',           sets:3, reps:8  },
+            { id:'barbell-row',     sets:3, reps:8  },
+            { id:'ohp',             sets:3, reps:8  },
+            { id:'rdl',             sets:3, reps:8  },
+            { id:'lat-pulldown',    sets:2, reps:10 },
+        ]
+    },
 ];
 
 // Prilepin-based percentage chart
@@ -693,12 +859,19 @@ function renderWorkout() {
     const el = document.getElementById('workout-content');
 
     if (!S.activeWorkout) {
-        el.innerHTML = `<div class="empty-state">
-            <div class="empty-icon">💪</div>
-            <div class="empty-title">No Active Workout</div>
-            <div class="empty-sub">Start a new workout to begin logging your sets and tracking progress.</div>
-        </div>
-        <button class="btn btn-primary" style="margin-top:8px;" onclick="startWorkout()">+ Start Workout</button>`;
+        const tCards = TEMPLATES.map(t => `
+            <div class="template-card" onclick="previewTemplate('${t.id}')" style="border-color:${t.color}20;">
+                <div class="template-dot" style="background:${t.color};"></div>
+                <div>
+                    <div class="template-name">${t.name}</div>
+                    <div class="template-desc">${t.desc}</div>
+                    <div class="template-count">${t.exercises.length} exercises</div>
+                </div>
+            </div>`).join('');
+        el.innerHTML = `
+            <button class="btn btn-primary" onclick="startWorkout()">+ Start Empty Workout</button>
+            <div class="section-label" style="margin-top:20px;">Start from Template</div>
+            ${tCards}`;
         return;
     }
 
@@ -1151,6 +1324,55 @@ function saveNewExercise() {
     save(); closeOverlay('overlay-new-exercise');
     document.getElementById('new-exercise-name').value = '';
     renderExercises();
+}
+
+// ─────────────────────────────────────────────────────────────
+// TEMPLATES
+// ─────────────────────────────────────────────────────────────
+function previewTemplate(tId) {
+    const t = TEMPLATES.find(x => x.id === tId);
+    if (!t) return;
+    let rows = t.exercises.map(te => {
+        const ex = getEx(te.id);
+        const pr = S.prs[te.id];
+        const suggested = pr ? wForReps(pr.est1RM, te.reps) : null;
+        return `<div class="set-row" style="grid-template-columns:1fr auto auto; padding:10px 0; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+            <div>
+                <div style="font-size:14px;font-weight:600;">${ex ? ex.name : te.id}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${te.sets} sets × ${te.reps} reps${suggested ? ` · <span style="color:var(--accent);font-weight:700;">${suggested} ${S.unit} suggested</span>` : ''}</div>
+            </div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('template-detail-content').innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:12px;height:12px;border-radius:50%;background:${t.color};flex-shrink:0;"></div>
+            <div class="sheet-title" style="margin:0;">${t.name}</div>
+        </div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:18px;">${t.desc}</div>
+        <div style="margin-bottom:16px;">${rows}</div>
+        <div style="font-size:12px;color:var(--text-muted);text-align:center;margin-bottom:14px;">Suggested weights are based on your logged 1RMs</div>
+        <button class="btn btn-primary" onclick="applyTemplate('${t.id}')">Start This Workout</button>
+        <button class="btn btn-outline" style="margin-top:8px;" onclick="closeOverlay('overlay-template')">Cancel</button>
+    `;
+    openOverlay('overlay-template');
+}
+
+function applyTemplate(tId) {
+    const t = TEMPLATES.find(x => x.id === tId);
+    if (!t) return;
+    S.activeWorkout = { id: Date.now(), startTime: Date.now(), entries: [] };
+    t.exercises.forEach(te => {
+        const pr = S.prs[te.id];
+        const suggested = pr ? wForReps(pr.est1RM, te.reps) : '';
+        const sets = Array.from({ length: te.sets }, () => ({
+            weight: suggested || '', reps: te.reps, done: false
+        }));
+        S.activeWorkout.entries.push({ exerciseId: te.id, sets });
+    });
+    save();
+    closeOverlay('overlay-template');
+    navigate('workout');
 }
 
 // ─────────────────────────────────────────────────────────────
