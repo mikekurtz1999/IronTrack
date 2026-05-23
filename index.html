@@ -437,9 +437,16 @@
         <div class="input-group">
             <div class="input-label">Category</div>
             <select id="new-exercise-cat">
-                <option value="Legs">Legs</option>
-                <option value="Push">Push (Chest / Shoulders)</option>
-                <option value="Pull">Pull (Back / Biceps)</option>
+                <option value="Chest">Chest</option>
+                <option value="Shoulders">Shoulders</option>
+                <option value="Triceps">Triceps</option>
+                <option value="Back">Back</option>
+                <option value="Traps">Traps</option>
+                <option value="Biceps">Biceps</option>
+                <option value="Quads">Quads</option>
+                <option value="Hamstrings">Hamstrings</option>
+                <option value="Glutes">Glutes</option>
+                <option value="Calves">Calves</option>
                 <option value="Core">Core</option>
                 <option value="Cardio">Cardio</option>
                 <option value="Other">Other</option>
@@ -454,91 +461,113 @@
 // EXERCISE LIBRARY
 // ─────────────────────────────────────────────────────────────
 const DEFAULT_EXERCISES = [
-    // ── LEGS ──────────────────────────────────────────────
-    { id:'squat',            name:'Back Squat',               cat:'Legs' },
-    { id:'front-squat',      name:'Front Squat',              cat:'Legs' },
-    { id:'deadlift',         name:'Deadlift',                 cat:'Legs' },
-    { id:'rdl',              name:'Romanian Deadlift',        cat:'Legs' },
-    { id:'sumo-deadlift',    name:'Sumo Deadlift',            cat:'Legs' },
-    { id:'leg-press',        name:'Leg Press',                cat:'Legs' },
-    { id:'hack-squat',       name:'Hack Squat',               cat:'Legs' },
-    { id:'bulgarian-split',  name:'Bulgarian Split Squat',    cat:'Legs' },
-    { id:'lunge',            name:'Walking Lunge',            cat:'Legs' },
-    { id:'reverse-lunge',    name:'Reverse Lunge',            cat:'Legs' },
-    { id:'step-up',          name:'Step-Up',                  cat:'Legs' },
-    { id:'good-morning',     name:'Good Morning',             cat:'Legs' },
-    { id:'leg-curl',         name:'Leg Curl (Lying)',         cat:'Legs' },
-    { id:'seated-leg-curl',  name:'Leg Curl (Seated)',        cat:'Legs' },
-    { id:'leg-ext',          name:'Leg Extension',            cat:'Legs' },
-    { id:'hip-thrust',       name:'Hip Thrust',               cat:'Legs' },
-    { id:'glute-bridge',     name:'Glute Bridge',             cat:'Legs' },
-    { id:'cable-kickback',   name:'Cable Glute Kickback',     cat:'Legs' },
-    { id:'adductor',         name:'Adductor Machine',         cat:'Legs' },
-    { id:'abductor',         name:'Abductor Machine',         cat:'Legs' },
-    { id:'calf-raise',       name:'Calf Raise (Standing)',    cat:'Legs' },
-    { id:'seated-calf',      name:'Calf Raise (Seated)',      cat:'Legs' },
-    { id:'nordic-curl',      name:'Nordic Curl',              cat:'Legs' },
-    // ── PUSH (Chest / Shoulders / Triceps) ────────────────
-    { id:'bench',            name:'Bench Press',              cat:'Push' },
-    { id:'incline',          name:'Incline Bench Press',      cat:'Push' },
-    { id:'decline-bench',    name:'Decline Bench Press',      cat:'Push' },
-    { id:'db-bench',         name:'DB Bench Press',           cat:'Push' },
-    { id:'incline-db-bench', name:'Incline DB Bench Press',   cat:'Push' },
-    { id:'close-grip-bench', name:'Close-Grip Bench Press',   cat:'Push' },
-    { id:'chest-fly',        name:'Cable Chest Fly',          cat:'Push' },
-    { id:'pec-deck',         name:'Pec Deck / Chest Machine', cat:'Push' },
-    { id:'db-fly',           name:'DB Fly',                   cat:'Push' },
-    { id:'pushup',           name:'Push-Up',                  cat:'Push' },
-    { id:'dip',              name:'Dip',                      cat:'Push' },
-    { id:'ohp',              name:'Overhead Press (Barbell)', cat:'Push' },
-    { id:'db-shoulder',      name:'DB Shoulder Press',        cat:'Push' },
-    { id:'arnold-press',     name:'Arnold Press',             cat:'Push' },
-    { id:'landmine-press',   name:'Landmine Press',           cat:'Push' },
-    { id:'lat-raise',        name:'Lateral Raise (DB)',       cat:'Push' },
-    { id:'cable-lat-raise',  name:'Lateral Raise (Cable)',    cat:'Push' },
-    { id:'front-raise',      name:'Front Raise',              cat:'Push' },
-    { id:'upright-row',      name:'Upright Row',              cat:'Push' },
-    { id:'rear-delt-fly',    name:'Rear Delt Fly',            cat:'Push' },
-    { id:'skull-crusher',    name:'Skull Crusher',            cat:'Push' },
-    { id:'tricep-ext',       name:'Tricep Extension (Cable)', cat:'Push' },
-    { id:'rope-pushdown',    name:'Rope Pushdown',            cat:'Push' },
-    { id:'tricep-oh-cable',  name:'Overhead Tricep (Cable)',  cat:'Push' },
-    { id:'tricep-kickback',  name:'Tricep Kickback',          cat:'Push' },
-    { id:'diamond-pushup',   name:'Diamond Push-Up',          cat:'Push' },
-    // ── PULL (Back / Biceps) ──────────────────────────────
-    { id:'barbell-row',      name:'Barbell Row',              cat:'Pull' },
-    { id:'db-row',           name:'Single-Arm DB Row',        cat:'Pull' },
-    { id:'tbar-row',         name:'T-Bar Row',                cat:'Pull' },
-    { id:'chest-sup-row',    name:'Chest-Supported Row',      cat:'Pull' },
-    { id:'pullup',           name:'Pull-Up',                  cat:'Pull' },
-    { id:'chinup',           name:'Chin-Up',                  cat:'Pull' },
-    { id:'lat-pulldown',     name:'Lat Pulldown',             cat:'Pull' },
-    { id:'seated-row',       name:'Seated Cable Row',         cat:'Pull' },
-    { id:'straight-arm-pd',  name:'Straight-Arm Pulldown',   cat:'Pull' },
-    { id:'face-pull',        name:'Face Pull',                cat:'Pull' },
-    { id:'shrug',            name:'Shrug',                    cat:'Pull' },
-    { id:'rack-pull',        name:'Rack Pull',                cat:'Pull' },
-    { id:'barbell-curl',     name:'Barbell Curl',             cat:'Pull' },
-    { id:'ezbar-curl',       name:'EZ Bar Curl',              cat:'Pull' },
-    { id:'hammer-curl',      name:'Hammer Curl',              cat:'Pull' },
-    { id:'incline-db-curl',  name:'Incline DB Curl',          cat:'Pull' },
-    { id:'preacher-curl',    name:'Preacher Curl',            cat:'Pull' },
-    { id:'concentration-curl',name:'Concentration Curl',      cat:'Pull' },
-    { id:'cable-curl',       name:'Cable Curl',               cat:'Pull' },
-    { id:'reverse-curl',     name:'Reverse Curl',             cat:'Pull' },
+    // ── CHEST ─────────────────────────────────────────────
+    { id:'bench',             name:'Barbell Bench Press',         cat:'Chest' },
+    { id:'incline-db-bench',  name:'Incline DB Bench Press',      cat:'Chest' },
+    { id:'db-bench',          name:'DB Bench Press (Flat)',        cat:'Chest' },
+    { id:'decline-bench',     name:'Decline Bench Press',         cat:'Chest' },
+    { id:'close-grip-bench',  name:'Close-Grip Bench Press',      cat:'Chest' },
+    { id:'chest-fly',         name:'Cable Fly (High-to-Low)',      cat:'Chest' },
+    { id:'cable-fly-low',     name:'Cable Fly (Low-to-High)',      cat:'Chest' },
+    { id:'cable-fly-mid',     name:'Cable Fly (Mid / Pec)',        cat:'Chest' },
+    { id:'pec-deck',          name:'Pec Deck',                     cat:'Chest' },
+    { id:'db-fly',            name:'DB Fly (Flat)',                cat:'Chest' },
+    { id:'incline-db-fly',    name:'DB Fly (Incline)',             cat:'Chest' },
+    { id:'pushup',            name:'Push-Up',                      cat:'Chest' },
+    { id:'dip-chest',         name:'Chest Dip',                    cat:'Chest' },
+    // ── SHOULDERS ─────────────────────────────────────────
+    { id:'ohp',               name:'Overhead Press (Barbell)',     cat:'Shoulders' },
+    { id:'db-shoulder',       name:'DB Shoulder Press',            cat:'Shoulders' },
+    { id:'arnold-press',      name:'Arnold Press',                 cat:'Shoulders' },
+    { id:'landmine-press',    name:'Landmine Press',               cat:'Shoulders' },
+    { id:'machine-shoulder',  name:'Machine Shoulder Press',       cat:'Shoulders' },
+    { id:'lat-raise',         name:'Lateral Raise (DB)',           cat:'Shoulders' },
+    { id:'cable-lat-raise',   name:'Lateral Raise (Cable)',        cat:'Shoulders' },
+    { id:'front-raise',       name:'Front Raise',                  cat:'Shoulders' },
+    { id:'upright-row',       name:'Upright Row',                  cat:'Shoulders' },
+    { id:'rear-delt-fly',     name:'Rear Delt Fly (DB)',           cat:'Shoulders' },
+    { id:'reverse-fly-cable', name:'Reverse Fly (Cable)',          cat:'Shoulders' },
+    { id:'face-pull',         name:'Face Pull',                    cat:'Shoulders' },
+    // ── TRICEPS ───────────────────────────────────────────
+    { id:'skull-crusher',     name:'Skull Crusher',                cat:'Triceps' },
+    { id:'rope-pushdown',     name:'Rope Pushdown',                cat:'Triceps' },
+    { id:'straight-bar-pd',   name:'Straight Bar Pushdown',        cat:'Triceps' },
+    { id:'straight-arm-tri',  name:'Straight-Arm Tricep Ext',      cat:'Triceps' },
+    { id:'tricep-oh-cable',   name:'Overhead Tricep (Cable)',       cat:'Triceps' },
+    { id:'tricep-oh-db',      name:'Overhead Tricep (DB)',          cat:'Triceps' },
+    { id:'tricep-kickback',   name:'Tricep Kickback',               cat:'Triceps' },
+    { id:'dip',               name:'Tricep Dip',                    cat:'Triceps' },
+    { id:'jm-press',          name:'JM Press',                      cat:'Triceps' },
+    { id:'diamond-pushup',    name:'Diamond Push-Up',               cat:'Triceps' },
+    // ── BACK ──────────────────────────────────────────────
+    { id:'pullup',            name:'Pull-Up',                       cat:'Back' },
+    { id:'chinup',            name:'Chin-Up',                       cat:'Back' },
+    { id:'lat-pulldown',      name:'Lat Pulldown',                  cat:'Back' },
+    { id:'barbell-row',       name:'Barbell Row (Bent Over)',        cat:'Back' },
+    { id:'db-row',            name:'Single-Arm DB Row',             cat:'Back' },
+    { id:'tbar-row',          name:'T-Bar Row',                     cat:'Back' },
+    { id:'chest-sup-row',     name:'Chest-Supported Row',           cat:'Back' },
+    { id:'seated-row',        name:'Seated Cable Row',              cat:'Back' },
+    { id:'straight-arm-pd',   name:'Straight-Arm Pulldown',         cat:'Back' },
+    { id:'rack-pull',         name:'Rack Pull',                     cat:'Back' },
+    // ── TRAPS ─────────────────────────────────────────────
+    { id:'shrug-bb',          name:'Barbell Shrug',                 cat:'Traps' },
+    { id:'shrug-db',          name:'DB Shrug',                      cat:'Traps' },
+    { id:'cable-shrug',       name:'Cable Shrug',                   cat:'Traps' },
+    { id:'behind-shrug',      name:'Behind-the-Back Shrug',         cat:'Traps' },
+    { id:'farmers-walk',      name:"Farmer's Walk",                 cat:'Traps' },
+    // ── BICEPS ────────────────────────────────────────────
+    { id:'barbell-curl',      name:'Barbell Curl',                  cat:'Biceps' },
+    { id:'ezbar-curl',        name:'EZ Bar Curl',                   cat:'Biceps' },
+    { id:'hammer-curl',       name:'Hammer Curl',                   cat:'Biceps' },
+    { id:'incline-db-curl',   name:'Incline DB Curl',               cat:'Biceps' },
+    { id:'bayesian-curl',     name:'Bayesian Curl (Cable)',          cat:'Biceps' },
+    { id:'preacher-curl',     name:'Preacher Curl',                  cat:'Biceps' },
+    { id:'concentration-curl',name:'Concentration Curl',             cat:'Biceps' },
+    { id:'cable-curl',        name:'Cable Curl',                    cat:'Biceps' },
+    { id:'spider-curl',       name:'Spider Curl',                   cat:'Biceps' },
+    { id:'reverse-curl',      name:'Reverse Curl',                  cat:'Biceps' },
+    // ── QUADS ─────────────────────────────────────────────
+    { id:'squat',             name:'Back Squat',                    cat:'Quads' },
+    { id:'front-squat',       name:'Front Squat',                   cat:'Quads' },
+    { id:'hack-squat',        name:'Hack Squat',                    cat:'Quads' },
+    { id:'leg-press',         name:'Leg Press',                     cat:'Quads' },
+    { id:'bulgarian-split',   name:'Bulgarian Split Squat',         cat:'Quads' },
+    { id:'leg-ext',           name:'Leg Extension',                 cat:'Quads' },
+    { id:'step-up',           name:'Step-Up',                       cat:'Quads' },
+    { id:'lunge',             name:'Walking Lunge',                 cat:'Quads' },
+    // ── HAMSTRINGS ────────────────────────────────────────
+    { id:'rdl',               name:'Romanian Deadlift',             cat:'Hamstrings' },
+    { id:'deadlift',          name:'Deadlift',                      cat:'Hamstrings' },
+    { id:'sumo-deadlift',     name:'Sumo Deadlift',                 cat:'Hamstrings' },
+    { id:'leg-curl',          name:'Leg Curl (Lying)',              cat:'Hamstrings' },
+    { id:'seated-leg-curl',   name:'Leg Curl (Seated)',             cat:'Hamstrings' },
+    { id:'nordic-curl',       name:'Nordic Curl',                   cat:'Hamstrings' },
+    { id:'good-morning',      name:'Good Morning',                  cat:'Hamstrings' },
+    // ── GLUTES ────────────────────────────────────────────
+    { id:'hip-thrust',        name:'Hip Thrust (Barbell)',          cat:'Glutes' },
+    { id:'glute-bridge',      name:'Glute Bridge',                  cat:'Glutes' },
+    { id:'cable-kickback',    name:'Cable Glute Kickback',          cat:'Glutes' },
+    { id:'reverse-hyper',     name:'Reverse Hyperextension',        cat:'Glutes' },
+    { id:'donkey-kickback',   name:'Donkey Kickback (Machine)',      cat:'Glutes' },
+    { id:'adductor',          name:'Adductor Machine',              cat:'Glutes' },
+    // ── CALVES ────────────────────────────────────────────
+    { id:'calf-raise',        name:'Calf Raise (Standing)',         cat:'Calves' },
+    { id:'seated-calf',       name:'Calf Raise (Seated)',           cat:'Calves' },
+    { id:'leg-press-calf',    name:'Leg Press Calf Raise',          cat:'Calves' },
+    { id:'single-leg-calf',   name:'Single-Leg Calf Raise',         cat:'Calves' },
+    { id:'smith-calf',        name:'Smith Machine Calf Raise',      cat:'Calves' },
     // ── CORE ──────────────────────────────────────────────
-    { id:'plank',            name:'Plank',                    cat:'Core' },
-    { id:'side-plank',       name:'Side Plank',               cat:'Core' },
-    { id:'ab-rollout',       name:'Ab Rollout',               cat:'Core' },
-    { id:'hanging-leg',      name:'Hanging Leg Raise',        cat:'Core' },
-    { id:'cable-crunch',     name:'Cable Crunch',             cat:'Core' },
-    { id:'decline-crunch',   name:'Decline Crunch',           cat:'Core' },
-    { id:'russian-twist',    name:'Russian Twist',            cat:'Core' },
-    { id:'dead-bug',         name:'Dead Bug',                 cat:'Core' },
-    { id:'pallof-press',     name:'Pallof Press',             cat:'Core' },
-    { id:'dragon-flag',      name:'Dragon Flag',              cat:'Core' },
-    { id:'landmine-twist',   name:'Landmine Twist',           cat:'Core' },
-    { id:'oblique-crunch',   name:'Oblique Crunch',           cat:'Core' },
+    { id:'cable-crunch',      name:'Cable Crunch',                  cat:'Core' },
+    { id:'hanging-leg',       name:'Hanging Leg Raise',             cat:'Core' },
+    { id:'ab-rollout',        name:'Ab Rollout',                    cat:'Core' },
+    { id:'pallof-press',      name:'Pallof Press',                  cat:'Core' },
+    { id:'dead-bug',          name:'Dead Bug',                      cat:'Core' },
+    { id:'plank',             name:'Plank',                         cat:'Core' },
+    { id:'side-plank',        name:'Side Plank',                    cat:'Core' },
+    { id:'russian-twist',     name:'Russian Twist',                 cat:'Core' },
+    { id:'dragon-flag',       name:'Dragon Flag',                   cat:'Core' },
+    { id:'decline-crunch',    name:'Decline Crunch',                cat:'Core' },
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -675,7 +704,9 @@ function loadData() {
     try {
         const d = JSON.parse(localStorage.getItem('irontrack_v1') || 'null');
         if (!d) return;
-        S.exercises     = d.exercises     || [...DEFAULT_EXERCISES];
+        // Always use latest built-in library; preserve user-added custom exercises
+        const customEx = (d.exercises || []).filter(e => !DEFAULT_EXERCISES.find(de => de.id === e.id));
+        S.exercises     = [...DEFAULT_EXERCISES, ...customEx];
         S.workouts      = d.workouts      || [];
         S.prs           = d.prs           || {};
         S.activeWorkout = d.activeWorkout || null;
