@@ -353,6 +353,39 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .anim { animation: fadeSlideUp 0.2s ease; }
+
+        /* NOTES */
+        .notes-area {
+            width: 100%; background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); color: var(--text); font-size: 14px;
+            padding: 10px 12px; resize: none; min-height: 72px;
+            font-family: inherit; margin-top: 4px;
+        }
+        .notes-area::placeholder { color: var(--text-dim); }
+        .history-notes {
+            font-size: 12px; color: var(--text-muted); margin-top: 6px;
+            font-style: italic; white-space: pre-wrap; word-break: break-word;
+        }
+
+        /* VOLUME DASHBOARD */
+        .vol-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .vol-row:last-child { margin-bottom: 0; }
+        .vol-label { font-size: 12px; color: var(--text-muted); width: 88px; flex-shrink: 0; }
+        .vol-bar-wrap { flex: 1; background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; }
+        .vol-bar { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s ease; }
+        .vol-count { font-size: 12px; font-weight: 700; color: var(--text); width: 26px; text-align: right; flex-shrink: 0; }
+
+        /* STATS SCREEN */
+        .stats-chart-wrap { margin-top: 4px; }
+        .bw-log-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+        .bw-log-row input { flex: 1; }
+        .bw-unit { color: var(--text-muted); font-size: 14px; flex-shrink: 0; }
+        .stats-ex-select { margin-bottom: 14px; }
+        .chart-latest { text-align: right; font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+        /* NAV — 6 items */
+        .nav-btn { font-size: 8.5px; }
+        .nav-btn svg { width: 19px; height: 19px; }
     </style>
 </head>
 <body>
@@ -369,6 +402,7 @@
         <div id="screen-calculator" class="screen"><div id="calc-content"></div></div>
         <div id="screen-exercises" class="screen"><div id="exercises-content"></div></div>
         <div id="screen-history" class="screen"><div id="history-content"></div></div>
+        <div id="screen-stats" class="screen"><div id="stats-content"></div></div>
     </div>
 
     <div id="rest-bar">
@@ -421,6 +455,12 @@
                 <polyline points="12 6 12 12 16 14"/>
             </svg>
             History
+        </button>
+        <button class="nav-btn" data-screen="stats">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Stats
         </button>
     </nav>
 </div>
@@ -800,6 +840,8 @@ let S = {
     _ctColor: '#f0a500',
     _ctExercises: [],   // [{id, sets, reps}] being built
     _addingToCustomTemplate: false,
+    bodyweights: [],    // [{date: timestamp, weight: number}]
+    statsExId: null,    // exercise selected on Stats screen
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -811,6 +853,7 @@ function save() {
         prs: S.prs, activeWorkout: S.activeWorkout,
         unit: S.unit, restDuration: S.restDuration,
         customTemplates: S.customTemplates,
+        bodyweights: S.bodyweights,
     }));
 }
 
@@ -827,6 +870,7 @@ function loadData() {
         S.unit            = d.unit            || 'lbs';
         S.restDuration    = d.restDuration    || 90;
         S.customTemplates = d.customTemplates || [];
+        S.bodyweights     = d.bodyweights     || [];
     } catch(e) {}
 }
 
@@ -856,7 +900,7 @@ function navigate(screen) {
 }
 
 function renderHeader(screen) {
-    const titles = { home:'IronTrack', workout: S.activeWorkout ? 'Active Workout' : 'Workout', calculator:'1RM Calculator', exercises:'Exercises', history:'History' };
+    const titles = { home:'IronTrack', workout: S.activeWorkout ? 'Active Workout' : 'Workout', calculator:'1RM Calculator', exercises:'Exercises', history:'History', stats:'Progress' };
     document.getElementById('header-title').textContent = titles[screen] || screen;
     const ha = document.getElementById('header-actions');
     if (screen === 'exercises') {
@@ -877,6 +921,7 @@ function renderScreen(s) {
     if (s === 'calculator') renderCalculator();
     if (s === 'exercises')  renderExercises();
     if (s === 'history')    renderHistory();
+    if (s === 'stats')      renderStats();
 }
 
 function setUnit(u) {
@@ -982,6 +1027,23 @@ function renderHome() {
         </div>`;
     }
 
+    // Weekly volume dashboard
+    const weekVol = getWeekVolume();
+    const weekCats = Object.entries(weekVol).sort((a,b) => b[1]-a[1]);
+    if (weekCats.length) {
+        const maxSets = Math.max(...weekCats.map(e=>e[1]));
+        h += `<div class="section-label">This Week — Sets by Muscle Group</div><div class="card">`;
+        weekCats.forEach(([cat, sets]) => {
+            const pct = (sets / maxSets) * 100;
+            h += `<div class="vol-row">
+                <div class="vol-label">${cat}</div>
+                <div class="vol-bar-wrap"><div class="vol-bar" style="width:${pct}%;"></div></div>
+                <div class="vol-count">${sets}</div>
+            </div>`;
+        });
+        h += `</div>`;
+    }
+
     if (!totalW && !S.activeWorkout) {
         h += `<div class="empty-state">
             <div class="empty-icon">🏋️</div>
@@ -1083,7 +1145,10 @@ function renderWorkout() {
     h += `<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
         <button class="btn btn-outline" onclick="openAddExercise()">+ Add Exercise</button>
         ${S.activeWorkout.entries.length ? `<button class="btn btn-primary" onclick="promptEndWorkout()">Finish Workout</button>` : ''}
-    </div>`;
+    </div>
+    <div class="section-label" style="margin-top:20px;">Session Notes</div>
+    <textarea class="notes-area" placeholder="How did it feel? Any PRs, injuries, adjustments…"
+        onchange="saveWorkoutNotes(this.value)">${S.activeWorkout.notes || ''}</textarea>`;
 
     el.innerHTML = h;
     startTimer();
@@ -1418,6 +1483,7 @@ function renderHistory() {
             </div>
             <div class="history-exercises">${exNames.slice(0,3).join(', ')}${exNames.length>3?' +' + (exNames.length-3) + ' more':''}</div>
             <div class="history-stats">${sets} sets · ${Math.round(vol).toLocaleString()} ${S.unit} total volume</div>
+            ${w.notes ? `<div class="history-notes">"${w.notes}"</div>` : ''}
         </div>`;
     });
     el.innerHTML = h;
@@ -1544,7 +1610,10 @@ function renderEditWorkout() {
 
     h += `
         <button class="btn btn-outline" style="margin-top:8px;" onclick="openAddExerciseToEdit()">+ Add Exercise</button>
-        <button class="btn btn-primary" style="margin-top:10px;" onclick="saveEditedWorkout()">Save Changes</button>
+        <div class="section-label" style="margin-top:16px;">Session Notes</div>
+        <textarea class="notes-area" placeholder="How did it feel? Any PRs, injuries, adjustments…"
+            onchange="updateEditNotes(this.value)">${w.notes || ''}</textarea>
+        <button class="btn btn-primary" style="margin-top:12px;" onclick="saveEditedWorkout()">Save Changes</button>
         <div style="height:4px;"></div>`;
 
     document.getElementById('edit-workout-content').innerHTML = h;
@@ -1990,6 +2059,195 @@ function addExToWorkout(exId) {
     }
     S.activeWorkout.entries.push({ exerciseId: exId, sets });
     save(); closeOverlay('overlay-add-exercise'); renderWorkout();
+}
+
+// ─────────────────────────────────────────────────────────────
+// NOTES
+// ─────────────────────────────────────────────────────────────
+function saveWorkoutNotes(val) {
+    if (S.activeWorkout) { S.activeWorkout.notes = val.trim(); save(); }
+}
+
+function updateEditNotes(val) {
+    const w = getEditWorkout(); if (!w) return;
+    w.notes = val.trim();
+}
+
+// ─────────────────────────────────────────────────────────────
+// WEEKLY VOLUME
+// ─────────────────────────────────────────────────────────────
+function getWeekVolume() {
+    const cutoff = Date.now() - 7 * 86400000;
+    const byCat = {};
+    S.workouts.filter(w => w.startTime >= cutoff).forEach(w => {
+        w.entries.forEach(entry => {
+            const ex = getEx(entry.exerciseId);
+            if (!ex) return;
+            const sets = entry.sets.filter(s => s.weight && s.reps).length;
+            byCat[ex.cat] = (byCat[ex.cat] || 0) + sets;
+        });
+    });
+    return byCat;
+}
+
+// ─────────────────────────────────────────────────────────────
+// SVG LINE CHART
+// ─────────────────────────────────────────────────────────────
+function svgLineChart(points, color, yUnit) {
+    if (!points || !points.length) {
+        return '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">No data yet</div>';
+    }
+    if (points.length === 1) {
+        return `<div style="text-align:center;padding:16px;">
+            <div style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Log more sessions to see a trend</div>
+            <div style="font-size:22px;font-weight:800;color:${color};">${Math.round(points[0].y)} <span style="font-size:13px;font-weight:500;">${yUnit}</span></div>
+        </div>`;
+    }
+
+    const W = 340, H = 160;
+    const PL = 42, PR = 10, PT = 10, PB = 30;
+    const pw = W - PL - PR, ph = H - PT - PB;
+
+    const xs = points.map(p => p.x), ys = points.map(p => p.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const rawMin = Math.min(...ys), rawMax = Math.max(...ys);
+    // Pad Y range so line isn't flush with edges
+    const pad = (rawMax - rawMin) * 0.15 || rawMax * 0.1 || 5;
+    const minY = rawMin - pad, maxY = rawMax + pad;
+    const rangeX = maxX - minX || 1, rangeY = maxY - minY || 1;
+
+    const sx = x => PL + ((x - minX) / rangeX) * pw;
+    const sy = y => PT + (1 - (y - minY) / rangeY) * ph;
+
+    // Grid + Y labels (4 lines)
+    let grid = '', yLabs = '';
+    for (let i = 0; i <= 3; i++) {
+        const v = rawMin + ((rawMax - rawMin) / 3) * i;
+        const yy = sy(v);
+        grid  += `<line x1="${PL}" y1="${yy.toFixed(1)}" x2="${W-PR}" y2="${yy.toFixed(1)}" stroke="#2a2a2a" stroke-width="1"/>`;
+        yLabs += `<text x="${PL-5}" y="${(yy+3.5).toFixed(1)}" text-anchor="end" fill="#666" font-size="9">${Math.round(v)}</text>`;
+    }
+
+    // X labels: first, middle, last
+    let xLabs = '';
+    const xIdxs = points.length <= 3 ? points.map((_,i)=>i) : [0, Math.floor((points.length-1)/2), points.length-1];
+    xIdxs.forEach(i => {
+        const d = new Date(points[i].x);
+        const lbl = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        xLabs += `<text x="${sx(points[i].x).toFixed(1)}" y="${H-PB+14}" text-anchor="middle" fill="#666" font-size="9">${lbl}</text>`;
+    });
+
+    // Polyline coords
+    const coords = points.map(p => `${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ');
+
+    // Area fill path
+    const areaPath = `M${PL},${PT+ph} ` +
+        points.map(p => `L${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ') +
+        ` L${sx(points[points.length-1].x).toFixed(1)},${PT+ph} Z`;
+
+    // Dots
+    const dots = points.map(p =>
+        `<circle cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="3.5" fill="${color}" stroke="var(--surface)" stroke-width="2"/>`
+    ).join('');
+
+    const gradId = 'g' + Math.abs(color.split('').reduce((a,c)=>a+c.charCodeAt(0),0));
+
+    return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible;">
+        <defs>
+            <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+            </linearGradient>
+        </defs>
+        ${grid}${yLabs}${xLabs}
+        <path d="${areaPath}" fill="url(#${gradId})"/>
+        <polyline points="${coords}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        ${dots}
+    </svg>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// STATS SCREEN
+// ─────────────────────────────────────────────────────────────
+function getExProgressData(exId) {
+    return S.workouts
+        .filter(w => w.entries.some(e => e.exerciseId === exId))
+        .map(w => {
+            const entry = w.entries.find(e => e.exerciseId === exId);
+            const best = Math.max(...entry.sets
+                .filter(s => s.weight && s.reps)
+                .map(s => epley(parseFloat(s.weight), parseInt(s.reps))));
+            return { x: w.startTime, y: best };
+        })
+        .filter(d => isFinite(d.y));
+}
+
+function logBodyweight() {
+    const input = document.getElementById('bw-input');
+    const val = parseFloat(input.value);
+    if (!val || val <= 0) return;
+    const todayStr = new Date().toDateString();
+    const idx = S.bodyweights.findIndex(b => new Date(b.date).toDateString() === todayStr);
+    if (idx >= 0) S.bodyweights[idx].weight = val;
+    else S.bodyweights.push({ date: Date.now(), weight: val });
+    save();
+    renderStats();
+}
+
+function renderStats() {
+    const el = document.getElementById('stats-content');
+    let h = '';
+
+    // ── Bodyweight ──────────────────────────────────────────
+    const todayStr = new Date().toDateString();
+    const todayBW  = S.bodyweights.find(b => new Date(b.date).toDateString() === todayStr);
+    const bwPoints = S.bodyweights.slice(-60).map(b => ({ x: b.date, y: b.weight }));
+    const latestBW = S.bodyweights[S.bodyweights.length - 1];
+
+    h += `<div class="section-label">Bodyweight</div>
+    <div class="card">
+        <div class="bw-log-row">
+            <input type="number" id="bw-input" inputmode="decimal" placeholder="${todayBW ? 'Logged: ' + todayBW.weight : 'Today\'s weight'}"
+                value="${todayBW ? todayBW.weight : ''}" step="0.1">
+            <span class="bw-unit">${S.unit}</span>
+            <button class="btn btn-primary btn-sm" onclick="logBodyweight()">Log</button>
+        </div>
+        <div class="stats-chart-wrap">${svgLineChart(bwPoints, '#22c55e', S.unit)}</div>
+        ${latestBW && !todayBW ? `<div class="chart-latest">Last logged: ${Math.round(latestBW.weight * 10)/10} ${S.unit} on ${new Date(latestBW.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>` : ''}
+    </div>`;
+
+    // ── Strength Progress ────────────────────────────────────
+    const exWithData = S.exercises.filter(ex =>
+        S.workouts.some(w => w.entries.some(e =>
+            e.exerciseId === ex.id && e.sets.some(s => s.weight && s.reps)
+        ))
+    );
+    const exOpts = exWithData.map(ex =>
+        `<option value="${ex.id}" ${S.statsExId === ex.id ? 'selected' : ''}>${ex.name}</option>`
+    ).join('');
+
+    let chartHtml = '';
+    if (!exWithData.length) {
+        chartHtml = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">Complete workouts to see progress charts.</div>';
+    } else if (!S.statsExId) {
+        chartHtml = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px;">Select an exercise above.</div>';
+    } else {
+        const pts = getExProgressData(S.statsExId);
+        const latest = pts[pts.length - 1];
+        chartHtml = `<div class="stats-chart-wrap">${svgLineChart(pts, '#f0a500', S.unit)}</div>`;
+        if (latest) chartHtml += `<div class="chart-latest">Latest est. 1RM: <strong style="color:var(--accent);">${Math.round(latest.y)} ${S.unit}</strong></div>`;
+    }
+
+    h += `<div class="section-label">Strength Progress (Est. 1RM)</div>
+    <div class="card">
+        ${exWithData.length ? `<select class="stats-ex-select" onchange="S.statsExId=this.value;renderStats()">
+            <option value="">— Pick an exercise —</option>
+            ${exOpts}
+        </select>` : ''}
+        ${chartHtml}
+    </div>`;
+
+    el.innerHTML = h;
 }
 
 // ─────────────────────────────────────────────────────────────
